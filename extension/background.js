@@ -198,7 +198,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             if (target.url.includes("tradingview.com")) {
               // TradingView: https://www.tradingview.com/chart/?symbol=BINANCE:BTCUSDT.P
               const baseSymbol = symbol.replace("USDT", "");
-              newUrl = `https://www.tradingview.com/chart/?symbol=BINANCE:${baseSymbol}USDT.P`;
+              newUrl = `https://cn.tradingview.com/chart/?symbol=BINANCE:${baseSymbol}USDT.P`;
             } else if (target.url.includes("binance.com")) {
               // Binance Futures: https://www.binance.com/futures/BTCUSDT
               newUrl = `https://www.binance.com/futures/${symbol}`;

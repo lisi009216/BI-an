@@ -30,7 +30,7 @@ window.addEventListener('message', async (event) => {
         if (url.includes('tradingview.com')) {
             // TradingView: 更新当前标签页 URL
             const baseSymbol = symbol.replace('USDT', '');
-            const newUrl = `https://www.tradingview.com/chart/?symbol=BINANCE:${baseSymbol}USDT.P`;
+            const newUrl = `https://cn.tradingview.com/chart/?symbol=BINANCE:${baseSymbol}USDT.P`;
             chrome.tabs.update(activeTab.id, { url: newUrl });
             return;
         } else if (url.includes('binance.com')) {

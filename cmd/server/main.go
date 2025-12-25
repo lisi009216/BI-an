@@ -17,6 +17,7 @@ import (
 	"example.com/binance-pivot-monitor/internal/pivot"
 	signalpkg "example.com/binance-pivot-monitor/internal/signal"
 	"example.com/binance-pivot-monitor/internal/sse"
+	"example.com/binance-pivot-monitor/internal/ticker"
 )
 
 func main() {
@@ -28,6 +29,7 @@ func main() {
 	monitorHeartbeat := flag.Duration("monitor-heartbeat", 0, "")
 	historyMax := flag.Int("history-max", 20000, "")
 	historyFile := flag.String("history-file", "signals/history.jsonl", "")
+	tickerBatchInterval := flag.Duration("ticker-batch-interval", 500*time.Millisecond, "")
 	flag.Parse()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -53,7 +55,7 @@ func main() {
 
 	refresher.StartScheduler(ctx)
 
-	broker := sse.NewBroker[signalpkg.Signal]()
+	signalBroker := sse.NewBroker[signalpkg.Signal]()
 	history := signalpkg.NewHistory(*historyMax)
 	if *historyFile != "" {
 		path := *historyFile
@@ -65,12 +67,21 @@ func main() {
 		}
 	}
 	cooldown := signalpkg.NewCooldown(30 * time.Minute)
-	mon := monitor.New(store, broker, history, cooldown)
+	mon := monitor.New(store, signalBroker, history, cooldown)
 	mon.HeartbeatEvery = *monitorHeartbeat
 	go mon.Run(ctx)
 
-	api := httpapi.New(broker, history, httpapi.ParseAllowedOrigins(*corsOrigins))
+	// Ticker monitor
+	tickerStore := ticker.NewStore()
+	tickerMon := ticker.NewMonitor(tickerStore)
+	tickerMon.BatchInterval = *tickerBatchInterval
+	go tickerMon.Run(ctx)
+
+	api := httpapi.New(signalBroker, history, httpapi.ParseAllowedOrigins(*corsOrigins))
 	api.PivotStatus = refresher
+	api.TickerStore = tickerStore
+	api.TickerMonitor = tickerMon
+
 	srv := &http.Server{
 		Addr:              *addr,
 		Handler:           api.Handler(),
