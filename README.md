@@ -4,6 +4,18 @@
 
 ---
 
+## Screenshots / 截图预览
+
+| Web Dashboard | Side Panel + TradingView |
+|:---:|:---:|
+| ![Browser](docs/screenshots/browser.png) | ![TradingView](docs/screenshots/tradingview.png) |
+
+| Side Panel + Binance | iOS PWA |
+|:---:|:---:|
+| ![Binance](docs/screenshots/binance.png) | ![iOS](docs/screenshots/ios.jpg) |
+
+---
+
 ## English
 
 ### Overview
@@ -18,6 +30,9 @@ Binance Pivot Monitor is a real-time cryptocurrency pivot point monitoring syste
 - **Multi-platform Alerts**:
   - Web Dashboard with SSE (Server-Sent Events)
   - Chrome Extension with sound notifications
+  - Side Panel mode for persistent display alongside trading pages
+- **Smart Navigation**: Click signals to jump to corresponding trading pair on TradingView or Binance
+- **Binance Dark Theme**: UI styled to match Binance's dark mode
 - **Signal History**: Persistent storage with configurable retention
 - **Cooldown System**: Prevents duplicate alerts within 30 minutes
 
@@ -52,6 +67,7 @@ Binance Pivot Monitor is a real-time cryptocurrency pivot point monitoring syste
 │   ├── background.js    # Service worker
 │   ├── popup.*          # Popup UI
 │   ├── options.*        # Settings page
+│   ├── sidepanel.*      # Side Panel UI
 │   └── offscreen.*      # SSE & audio handling
 ├── static/              # Web assets (favicon, icons)
 ├── data/                # Runtime data
@@ -203,6 +219,9 @@ Binance Pivot Monitor 是一个实时加密货币枢轴点监控系统，专为�
 - **多平台警报**：
   - Web 仪表板（SSE 实时推送）
   - Chrome 扩展（支持声音提醒）
+  - Side Panel 模式（侧边栏持久显示，配合交易页面使用）
+- **智能跳转**：点击信号自动跳转到 TradingView 或币安对应交易对
+- **币安暗色主题**：UI 风格与币安暗色模式统一
 - **信号历史**：持久化存储，可配置保留数量
 - **冷却系统**：30 分钟内防止重复警报
 
@@ -237,6 +256,7 @@ Binance Pivot Monitor 是一个实时加密货币枢轴点监控系统，专为�
 │   ├── background.js    # Service Worker
 │   ├── popup.*          # 弹出窗口界面
 │   ├── options.*        # 设置页面
+│   ├── sidepanel.*      # 侧边栏界面
 │   └── offscreen.*      # SSE 和音频处理
 ├── static/              # Web 资源（图标等）
 ├── data/                # 运行时数据
@@ -389,6 +409,17 @@ sudo systemctl start binance-pivot-monitor
 3. 设置 Filter Levels 过滤显示的信号
 4. 设置 Sound Alert Levels 选择触发声音的级别
 5. 开启/关闭声音提醒
+
+**Side Panel 模式（推荐）**：
+1. 点击弹出窗口中的 ◫ 按钮打开侧边栏
+2. 侧边栏会加载 Web 仪表板，可持久显示
+3. 点击信号会自动跳转到当前激活的交易页面（TradingView 或币安）
+4. 适合配合交易页面一起使用
+
+**独立窗口模式**：
+1. 点击弹出窗口中的 ⧉ 按钮
+2. 弹出窗口会分离成独立浮动窗口
+3. 不会因点击其他地方而关闭
 
 ### 常见问题
 
