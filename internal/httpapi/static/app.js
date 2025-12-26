@@ -294,6 +294,34 @@
         menuSymbol = null;
     }
 
+    // 复制到剪贴板（兼容多种环境）
+    function copyToClipboard(text) {
+        // 优先使用 Clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+        // 备用方案：使用 execCommand
+        return new Promise((resolve, reject) => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                const success = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (success) resolve();
+                else reject(new Error('execCommand failed'));
+            } catch (err) {
+                document.body.removeChild(textarea);
+                reject(err);
+            }
+        });
+    }
+
     function setupActionMenu() {
         document.addEventListener("click", (e) => {
             if (!e.target.closest("#actionMenu")) hideActionMenu();
@@ -314,7 +342,9 @@
                         }
                         break;
                     case "copy":
-                        navigator.clipboard.writeText(menuSymbol).then(() => showToast("Copied: " + menuSymbol)).catch(() => showToast("Copy failed"));
+                        copyToClipboard(menuSymbol)
+                            .then(() => showToast("Copied: " + menuSymbol))
+                            .catch(() => showToast("Copy failed"));
                         break;
                     case "filter":
                         if ($("symbol").value.trim().toUpperCase() === menuSymbol) {
