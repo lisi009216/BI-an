@@ -224,22 +224,24 @@ func (r *Refresher) needsRefresh(period Period, loc *time.Location) bool {
 
 	now := time.Now().In(loc)
 
+	// 延迟2分钟刷新，确保币安K线数据已完全收盘
+	// 币安日线在 UTC 00:00 (UTC+8 08:00) 收盘，延迟到 08:02 确保数据稳定
 	switch period {
 	case PeriodDaily:
-		today8am := time.Date(now.Year(), now.Month(), now.Day(), 8, 0, 0, 0, loc)
-		if !now.Before(today8am) && snap.UpdatedAt.In(loc).Before(today8am) {
+		today8am02 := time.Date(now.Year(), now.Month(), now.Day(), 8, 2, 0, 0, loc)
+		if !now.Before(today8am02) && snap.UpdatedAt.In(loc).Before(today8am02) {
 			return true
 		}
 	case PeriodWeekly:
-		today := time.Date(now.Year(), now.Month(), now.Day(), 8, 0, 0, 0, loc)
+		today := time.Date(now.Year(), now.Month(), now.Day(), 8, 2, 0, 0, loc)
 		delta := (int(time.Monday) - int(now.Weekday()) + 7) % 7
-		thisMonday8am := today.AddDate(0, 0, -((7 - delta) % 7))
+		thisMonday8am02 := today.AddDate(0, 0, -((7 - delta) % 7))
 		if now.Weekday() == time.Monday {
-			thisMonday8am = today
+			thisMonday8am02 = today
 		} else {
-			thisMonday8am = today.AddDate(0, 0, -int(now.Weekday()-time.Monday))
+			thisMonday8am02 = today.AddDate(0, 0, -int(now.Weekday()-time.Monday))
 		}
-		if !now.Before(thisMonday8am) && snap.UpdatedAt.In(loc).Before(thisMonday8am) {
+		if !now.Before(thisMonday8am02) && snap.UpdatedAt.In(loc).Before(thisMonday8am02) {
 			return true
 		}
 	}
@@ -283,13 +285,15 @@ func (r *Refresher) loop(ctx context.Context, period Period, loc *time.Location)
 func nextRun(now time.Time, period Period, loc *time.Location) time.Time {
 	switch period {
 	case PeriodDaily:
-		t := time.Date(now.Year(), now.Month(), now.Day(), 8, 0, 0, 0, loc)
+		// 延迟到 08:02 刷新，确保币安K线数据已完全收盘
+		t := time.Date(now.Year(), now.Month(), now.Day(), 8, 2, 0, 0, loc)
 		if !now.Before(t) {
 			t = t.AddDate(0, 0, 1)
 		}
 		return t
 	case PeriodWeekly:
-		today := time.Date(now.Year(), now.Month(), now.Day(), 8, 0, 0, 0, loc)
+		// 延迟到 08:02 刷新
+		today := time.Date(now.Year(), now.Month(), now.Day(), 8, 2, 0, 0, loc)
 		delta := (int(time.Monday) - int(now.Weekday()) + 7) % 7
 		t := today.AddDate(0, 0, delta)
 		if delta == 0 && !now.Before(today) {
