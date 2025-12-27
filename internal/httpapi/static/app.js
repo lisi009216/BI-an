@@ -55,9 +55,41 @@
         return h > 0 ? h + "h " + m + "m" : m + "m";
     };
 
+    // 效率等级颜色
+    const getEfficiencyColor = rank => {
+        if (!rank) return '#6b7280';
+        const first = rank[0];
+        return {
+            'A': '#22c55e',  // 绿色 - 高效
+            'B': '#84cc16',  // 黄绿 - 较高效
+            'C': '#eab308',  // 黄色 - 中等
+            'D': '#f97316',  // 橙色 - 较低
+            'E': '#ef4444',  // 红色 - 低效
+            'F': '#ef4444',
+            'G': '#6b7280',
+            'J': '#6b7280'
+        }[first] || '#6b7280';
+    };
+
+    // 方向颜色
+    const getDirectionColor = dir => {
+        return dir === 'bullish' ? '#22c55e' : dir === 'bearish' ? '#ef4444' : '#6b7280';
+    };
+
+    // 格式化时间
+    const fmtTime = v => {
+        try {
+            const d = new Date(v);
+            if (isNaN(d)) return String(v);
+            return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } catch (_) { return String(v); }
+    };
+
     // ==================== 状态管理 ====================
     let masterSignals = [];      // 主数据（从后端加载）
     let filteredSignals = [];    // 过滤后数据（前端计算）
+    let masterPatterns = [];     // 形态信号数据
+    let filteredPatterns = [];   // 过滤后形态数据
     let tickerData = new Map();  // Ticker 数据
     let symbolRanking = { volume: new Map(), trades: new Map() };
 
@@ -66,9 +98,11 @@
     let currentView = 'signals';
     let menuSymbol = null;
     let menuFromRanking = false;
+    let currentPatternSignal = null; // 当前显示详情的形态信号
 
     // Clusterize 实例
     let signalCluster = null;
+    let patternCluster = null;
     let rankingCluster = null;
 
     // localStorage keys
@@ -179,7 +213,56 @@
     }
 
     function updateHint() {
-        $("hint").textContent = `Signals: ${filteredSignals.length}/${masterSignals.length}`;
+        if (currentView === 'patterns') {
+            $("hint").textContent = `Patterns: ${filteredPatterns.length}/${masterPatterns.length}`;
+        } else {
+            $("hint").textContent = `Signals: ${filteredSignals.length}/${masterSignals.length}`;
+        }
+    }
+
+    // ==================== Pattern 过滤逻辑 ====================
+    function getPatternFilters() {
+        return {
+            symbol: $("symbol").value.trim(),
+            patternType: $("patternType").value,
+            efficiencyRank: $("efficiencyRank").value,
+            direction: $("patternDirection").value
+        };
+    }
+
+    function matchPattern(pattern, filters) {
+        if (!pattern) return false;
+
+        // Symbol 过滤
+        if (filters.symbol) {
+            const query = filters.symbol.toUpperCase();
+            const sym = String(pattern.symbol || "").toUpperCase();
+            if (query.startsWith("$")) {
+                if (sym !== query.slice(1)) return false;
+            } else {
+                if (!sym.includes(query)) return false;
+            }
+        }
+
+        // Pattern type 过滤
+        if (filters.patternType && pattern.pattern !== filters.patternType) return false;
+
+        // Efficiency rank 过滤
+        if (filters.efficiencyRank) {
+            const rank = pattern.efficiency_rank || '';
+            if (!rank.startsWith(filters.efficiencyRank)) return false;
+        }
+
+        // Direction 过滤
+        if (filters.direction && pattern.direction !== filters.direction) return false;
+
+        return true;
+    }
+
+    function applyPatternFilters() {
+        const filters = getPatternFilters();
+        filteredPatterns = masterPatterns.filter(p => matchPattern(p, filters));
+        updateHint();
     }
 
     // ==================== 排行计算 ====================
@@ -226,6 +309,12 @@
             rankHtml = `<div class="ranks">${vr}${tr}</div>`;
         }
 
+        // 关联形态徽章
+        let patternBadgeHtml = '';
+        if (signal.related_pattern) {
+            patternBadgeHtml = renderPatternBadge(signal.related_pattern);
+        }
+
         // 价格差异
         let diffHtml = '';
         let tickerHtml = '';
@@ -255,6 +344,7 @@
                         <span class="tag">${signal.period}</span>
                         <span class="tag">${signal.level}</span>
                         <span class="tag ${signal.direction}">${signal.direction}</span>
+                        ${patternBadgeHtml}
                     </div>
                 </div>
                 <div class="sub">
@@ -281,6 +371,71 @@
         `;
     }
 
+    // ==================== Pattern 渲染函数 ====================
+    function renderPatternItem(pattern, index) {
+        const effColor = getEfficiencyColor(pattern.efficiency_rank);
+        const dirColor = getDirectionColor(pattern.direction);
+        const dirArrow = pattern.direction === 'bullish' ? '↑' : pattern.direction === 'bearish' ? '↓' : '•';
+
+        // 显示 confidence（需求 5.2）
+        const confidence = pattern.confidence || 0;
+
+        return `
+            <div class="item pattern-item" data-index="${index}" data-symbol="${pattern.symbol}" data-pattern-id="${pattern.id}">
+                <div class="top">
+                    <div class="sym">${pattern.symbol}</div>
+                    <div class="tags">
+                        <span class="tag">${pattern.pattern_cn || pattern.pattern}</span>
+                        <span class="tag" style="background:${dirColor};color:#fff">${dirArrow}</span>
+                        <span class="tag rate" style="background:${effColor};color:#fff">${confidence}%</span>
+                    </div>
+                </div>
+                <div class="sub">
+                    <div>
+                        <span class="efficiency">Rank: ${pattern.efficiency_rank || '-'}</span>
+                        <span class="source-tag">${pattern.source || 'unknown'}</span>
+                    </div>
+                    <div class="muted time-rel" data-time="${pattern.detected_at}">${fmtRelTime(pattern.detected_at)}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 在枢轴点信号上显示关联形态徽章
+    function renderPatternBadge(relatedPattern) {
+        if (!relatedPattern) return '';
+
+        const isBullish = relatedPattern.direction === 'bullish';
+        const isBearish = relatedPattern.direction === 'bearish';
+
+        // 上涨绿色，下跌红色
+        const colorClass = isBullish ? 'bullish' : isBearish ? 'bearish' : 'neutral';
+        const arrow = isBullish ? '↑' : isBearish ? '↓' : '•';
+
+        // 显示对应方向的概率
+        const rate = isBullish ? relatedPattern.up_percent :
+            isBearish ? relatedPattern.down_percent :
+                Math.max(relatedPattern.up_percent || 0, relatedPattern.down_percent || 0);
+
+        // 形态名称（中文优先）
+        const name = relatedPattern.pattern_cn || relatedPattern.pattern || '';
+
+        // 时间差和数量信息
+        const timeDiff = relatedPattern.time_diff || '';
+        const count = relatedPattern.count || 1;
+        const countInfo = count > 1 ? `(${count})` : '';
+
+        // 构建 title 提示
+        const dirText = isBullish ? '看涨' : isBearish ? '看跌' : '中性';
+        const title = `${name} - ${dirText} ${rate}%${timeDiff ? ' - ' + timeDiff : ''}${count > 1 ? ' - 共' + count + '个形态' : ''}`;
+
+        return `
+            <span class="pattern-badge ${colorClass}" title="${title}">
+                ${arrow}${rate}% ${name}${countInfo} ${timeDiff}
+            </span>
+        `;
+    }
+
     // ==================== Clusterize 管理 ====================
     function initClusterize() {
         // 信号列表
@@ -296,6 +451,23 @@
             callbacks: {
                 clusterChanged: function () {
                     bindSignalItemEvents();
+                }
+            }
+        });
+
+        // 形态列表
+        patternCluster = new Clusterize({
+            rows: [],
+            scrollId: 'patternScroll',
+            contentId: 'patternList',
+            rows_in_block: 20,
+            blocks_in_cluster: 4,
+            tag: null,
+            no_data_text: 'No patterns',
+            no_data_class: 'clusterize-no-data',
+            callbacks: {
+                clusterChanged: function () {
+                    bindPatternItemEvents();
                 }
             }
         });
@@ -324,6 +496,11 @@
         signalCluster.update(rows);
     }
 
+    function updatePatternList() {
+        const rows = filteredPatterns.map((p, i) => renderPatternItem(p, i));
+        patternCluster.update(rows);
+    }
+
     function updateRankingList() {
         const { byVolume, byTrades } = computeRanking();
         const type = currentView;
@@ -334,17 +511,29 @@
 
     function updateView() {
         const signalScroll = $("signalScroll");
+        const patternScroll = $("patternScroll");
         const rankingScroll = $("rankingScroll");
+        const patternFilters = $("patternFilters");
         const showSignalsBtn = document.querySelector('[data-action="signals"]');
+
+        // 隐藏所有滚动区域
+        signalScroll.style.display = 'none';
+        patternScroll.style.display = 'none';
+        rankingScroll.style.display = 'none';
+        patternFilters.style.display = 'none';
 
         if (currentView === 'signals') {
             signalScroll.style.display = '';
-            rankingScroll.style.display = 'none';
             showSignalsBtn.style.display = 'none';
             applyFilters();
             updateSignalList();
+        } else if (currentView === 'patterns') {
+            patternScroll.style.display = '';
+            patternFilters.style.display = 'flex';
+            showSignalsBtn.style.display = 'none';
+            applyPatternFilters();
+            updatePatternList();
         } else {
-            signalScroll.style.display = 'none';
             rankingScroll.style.display = '';
             showSignalsBtn.style.display = '';
             updateRankingList();
@@ -373,6 +562,61 @@
             };
         });
     }
+
+    function bindPatternItemEvents() {
+        document.querySelectorAll("#patternList .pattern-item").forEach(item => {
+            item.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const patternId = item.dataset.patternId;
+                const pattern = masterPatterns.find(p => p.id === patternId);
+                if (pattern) {
+                    showPatternDetail(pattern);
+                }
+            };
+        });
+    }
+
+    // ==================== Pattern 详情弹窗 ====================
+    function showPatternDetail(pattern) {
+        currentPatternSignal = pattern;
+
+        $("modalSymbol").textContent = pattern.symbol;
+        $("modalPatternName").textContent = pattern.pattern_cn || pattern.pattern;
+
+        const dirText = pattern.direction === 'bullish' ? 'Bullish ↑' :
+            pattern.direction === 'bearish' ? 'Bearish ↓' : 'Neutral';
+        $("modalDirection").textContent = dirText;
+        $("modalDirection").className = 'value ' + pattern.direction;
+
+        $("modalUpPct").textContent = (pattern.up_percent || 0) + '%';
+        $("modalUpBar").style.width = (pattern.up_percent || 0) + '%';
+
+        $("modalDownPct").textContent = (pattern.down_percent || 0) + '%';
+        $("modalDownBar").style.width = (pattern.down_percent || 0) + '%';
+
+        const effRank = pattern.efficiency_rank || '-';
+        $("modalEfficiency").textContent = effRank;
+        $("modalEfficiency").className = 'value efficiency-' + (effRank[0] || '');
+
+        $("modalConfidence").textContent = (pattern.confidence || 0) + '%';
+
+        const sourceText = pattern.source === 'talib' ? 'TA-Lib' :
+            pattern.source === 'custom' ? 'Custom' : pattern.source || '-';
+        $("modalSource").textContent = sourceText + (pattern.stats_source ? ' (' + pattern.stats_source + ')' : '');
+
+        $("modalDetectedAt").textContent = fmtTime(pattern.detected_at);
+
+        $("patternModal").style.display = 'flex';
+    }
+
+    function hidePatternModal() {
+        $("patternModal").style.display = 'none';
+        currentPatternSignal = null;
+    }
+
+    // 暴露到全局以便 HTML onclick 调用
+    window.hidePatternModal = hidePatternModal;
 
     // ==================== 操作菜单 ====================
     function showActionMenu(e, symbol) {
@@ -430,11 +674,7 @@
 
                 switch (action) {
                     case "trade":
-                        if (window.parent !== window) {
-                            window.parent.postMessage({ type: "jump_symbol", symbol: menuSymbol }, "*");
-                        } else {
-                            window.open("https://www.binance.com/futures/" + menuSymbol, "_blank");
-                        }
+                        jumpToTrade(menuSymbol);
                         break;
 
                     case "copy":
@@ -533,6 +773,7 @@
         // Symbol 搜索（防抖，仅前端过滤）
         const debouncedFilter = debounce(() => {
             applyFilters();
+            applyPatternFilters();
             updateView();
         }, 200);
 
@@ -550,6 +791,101 @@
             saveSettings();
             loadHistory();
         };
+
+        // Pattern 筛选器
+        $("patternType").onchange = () => { applyPatternFilters(); updateView(); };
+        $("efficiencyRank").onchange = () => { applyPatternFilters(); updateView(); };
+        $("patternDirection").onchange = () => { applyPatternFilters(); updateView(); };
+    }
+
+    function setupPatternModal() {
+        // 点击背景关闭弹窗
+        $("patternModal").onclick = (e) => {
+            if (e.target === $("patternModal")) {
+                hidePatternModal();
+            }
+        };
+
+        // Trade 按钮
+        $("modalTradeBtn").onclick = () => {
+            if (!currentPatternSignal) return;
+            jumpToTrade(currentPatternSignal.symbol);
+            hidePatternModal();
+        };
+
+        // Filter 按钮
+        $("modalFilterBtn").onclick = () => {
+            if (!currentPatternSignal) return;
+            $("symbol").value = "$" + currentPatternSignal.symbol;
+            applyPatternFilters();
+            updateView();
+            hidePatternModal();
+            showToast("Filtered: " + currentPatternSignal.symbol);
+        };
+    }
+
+    // ==================== 跳转交易 ====================
+    function jumpToTrade(symbol) {
+        if (!symbol) return;
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: "jump_symbol", symbol }, "*");
+        } else {
+            window.open("https://www.binance.com/futures/" + symbol, "_blank");
+        }
+    }
+
+    // ==================== 前端 Pattern 关联 ====================
+    // 在前端查找与 signal 相关的 pattern（60分钟窗口内，前后都查）
+    function findRelatedPattern(symbol, signalTime) {
+        if (!masterPatterns || masterPatterns.length === 0) return null;
+
+        const windowMs = 60 * 60 * 1000; // 60 minutes
+        const signalTs = signalTime.getTime();
+
+        let closest = null;
+        let closestDiff = Infinity;
+
+        for (const pat of masterPatterns) {
+            if (pat.symbol !== symbol) continue;
+
+            const patTs = new Date(pat.detected_at).getTime();
+            const diff = Math.abs(signalTs - patTs);
+
+            if (diff <= windowMs && diff < closestDiff) {
+                closestDiff = diff;
+                closest = pat;
+            }
+        }
+
+        if (!closest) return null;
+
+        // 构建 related_pattern 对象
+        const pivotUp = true; // 需要从 signal 获取，这里简化处理
+        const patternBullish = closest.direction === 'bullish';
+        let correlation = 'moderate';
+        if (closest.direction !== 'neutral') {
+            correlation = (pivotUp && patternBullish) || (!pivotUp && !patternBullish) ? 'strong' : 'weak';
+        }
+
+        // 计算时间差
+        const diffMs = signalTs - new Date(closest.detected_at).getTime();
+        const diffMin = Math.round(Math.abs(diffMs) / 60000);
+        const timeDiff = diffMs >= 0 ? `${diffMin}m ago` : `in ${diffMin}m`;
+
+        return {
+            id: closest.id,
+            pattern: closest.pattern,
+            pattern_cn: closest.pattern_cn,
+            direction: closest.direction,
+            confidence: closest.confidence,
+            up_percent: closest.up_percent,
+            down_percent: closest.down_percent,
+            efficiency_rank: closest.efficiency_rank,
+            correlation: correlation,
+            detected_at: closest.detected_at,
+            count: 1,
+            time_diff: timeDiff
+        };
     }
 
     // ==================== 数据加载 ====================
@@ -565,6 +901,16 @@
             masterSignals = (data || []).sort((a, b) =>
                 (new Date(b.triggered_at) || 0) - (new Date(a.triggered_at) || 0)
             );
+
+            // 前端补充关联 pattern（如果后端没有关联）
+            for (const sig of masterSignals) {
+                if (!sig.related_pattern && masterPatterns.length > 0) {
+                    const related = findRelatedPattern(sig.symbol, new Date(sig.triggered_at));
+                    if (related) {
+                        sig.related_pattern = related;
+                    }
+                }
+            }
 
             applyFilters();
             updateView();
@@ -589,6 +935,22 @@
         } catch (_) { }
     }
 
+    async function loadRuntimeStats() {
+        try {
+            const r = await fetch("/api/runtime");
+            if (!r.ok) return;
+            const d = await r.json();
+
+            $("rtGoroutines").textContent = d.goroutines || '-';
+            $("rtKlines").textContent = d.kline_symbols || '-';
+            // 显示 "交易对/信号数" 格式
+            const symbols = d.symbols || 0;
+            const signals = d.signals || 0;
+            $("rtSignals").textContent = symbols + '/' + signals;
+            $("rtHeap").textContent = d.heap_mb ? d.heap_mb.toFixed(0) : '-';
+        } catch (_) { }
+    }
+
     async function loadTickers() {
         try {
             const r = await fetch("/api/tickers");
@@ -598,6 +960,21 @@
                 for (const [symbol, ticker] of Object.entries(data)) {
                     tickerData.set(symbol, ticker);
                 }
+            }
+        } catch (_) { }
+    }
+
+    async function loadPatterns() {
+        try {
+            const r = await fetch("/api/patterns?limit=500");
+            if (!r.ok) return;
+            const data = await r.json();
+            masterPatterns = (data || []).sort((a, b) =>
+                (new Date(b.detected_at) || 0) - (new Date(a.detected_at) || 0)
+            );
+            if (currentView === 'patterns') {
+                applyPatternFilters();
+                updatePatternList();
             }
         } catch (_) { }
     }
@@ -654,6 +1031,13 @@
                 if (signal && signal.id) {
                     const exists = masterSignals.findIndex(s => s.id === signal.id);
                     if (exists === -1) {
+                        // 尝试关联最近的 pattern（前端关联）
+                        if (!signal.related_pattern) {
+                            const relatedPattern = findRelatedPattern(signal.symbol, new Date(signal.triggered_at));
+                            if (relatedPattern) {
+                                signal.related_pattern = relatedPattern;
+                            }
+                        }
                         masterSignals.unshift(signal);
                         // 保持数据量限制
                         const limit = parseInt($("limit").value) || 1000;
@@ -667,6 +1051,31 @@
                 applyFilters();
                 if (currentView === 'signals') {
                     updateSignalList();
+                }
+            } catch (_) { }
+        });
+
+        // 形态信号
+        es.addEventListener("pattern", e => {
+            try {
+                const pattern = JSON.parse(e.data);
+
+                // 合并到主数据
+                if (pattern && pattern.id) {
+                    const exists = masterPatterns.findIndex(p => p.id === pattern.id);
+                    if (exists === -1) {
+                        masterPatterns.unshift(pattern);
+                        // 保持数据量限制
+                        if (masterPatterns.length > 1000) {
+                            masterPatterns = masterPatterns.slice(0, 1000);
+                        }
+                    }
+                }
+
+                // 重新过滤并更新视图
+                if (currentView === 'patterns') {
+                    applyPatternFilters();
+                    updatePatternList();
                 }
             } catch (_) { }
         });
@@ -755,6 +1164,8 @@
             const item = el.closest(".item");
             if (item && item.dataset.time) {
                 el.textContent = fmtRelTime(item.dataset.time);
+            } else if (el.dataset.time) {
+                el.textContent = fmtRelTime(el.dataset.time);
             }
         });
     }
@@ -787,10 +1198,12 @@
         const availableHeight = Math.max(200, viewportHeight - headerHeight - 24);
 
         $("signalScroll").style.height = availableHeight + 'px';
+        $("patternScroll").style.height = availableHeight + 'px';
         $("rankingScroll").style.height = availableHeight + 'px';
 
         // 通知 Clusterize 重新计算
         if (signalCluster) signalCluster.refresh();
+        if (patternCluster) patternCluster.refresh();
         if (rankingCluster) rankingCluster.refresh();
     }
 
@@ -801,6 +1214,7 @@
         setupTabs();
         setupFilters();
         setupActionMenu();
+        setupPatternModal();
         initClusterize();
 
         // 延迟计算高度，确保 DOM 已渲染
@@ -809,22 +1223,34 @@
         });
         window.addEventListener('resize', debounce(calcScrollHeight, 100));
 
+        // Runtime stats 点击刷新
+        const runtimeStats = $("runtimeStats");
+        if (runtimeStats) {
+            runtimeStats.onclick = loadRuntimeStats;
+        }
+
         // Refresh 按钮
         $("refresh").onclick = () => {
             loadHistory();
+            loadPatterns();
             loadPivotStatus();
             loadTickers();
+            loadRuntimeStats();
         };
 
-        // 初始加载
+        // 初始加载 - 先加载 patterns，再加载 history（确保后端能关联 pattern）
         loadTickers().then(() => {
-            loadHistory();
+            loadPatterns().then(() => {
+                loadHistory();
+            });
             loadPivotStatus();
+            loadRuntimeStats();
             connectSSE();
         });
 
         // 定时任务
         setInterval(loadPivotStatus, 60000);
+        setInterval(loadRuntimeStats, 5000); // 每5秒刷新运行时状态
         setInterval(updateRelTimes, 10000);
     }
 

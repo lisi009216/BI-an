@@ -63,6 +63,10 @@ func (e *TickerEvent) UnmarshalJSON(data []byte) error {
 		case json.Number:
 			i, _ := val.Int64()
 			return i
+		case string:
+			// 处理字符串格式的数字（如 "1234567890"）
+			i, _ := json.Number(val).Int64()
+			return i
 		case float64:
 			return int64(val)
 		}

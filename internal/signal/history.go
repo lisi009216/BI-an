@@ -251,3 +251,22 @@ func (h *History) Query(symbolContains, period, level, direction, source string,
 	h.mu.RUnlock()
 	return res
 }
+
+// Count returns the number of signals in history.
+func (h *History) Count() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.signals)
+}
+
+// SymbolCount returns the number of unique symbols in history.
+func (h *History) SymbolCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	seen := make(map[string]struct{})
+	for _, s := range h.signals {
+		seen[s.Symbol] = struct{}{}
+	}
+	return len(seen)
+}

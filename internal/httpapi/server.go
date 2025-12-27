@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
+	"example.com/binance-pivot-monitor/internal/kline"
+	"example.com/binance-pivot-monitor/internal/pattern"
 	"example.com/binance-pivot-monitor/internal/pivot"
 	signalpkg "example.com/binance-pivot-monitor/internal/signal"
 	"example.com/binance-pivot-monitor/internal/sse"
@@ -26,6 +29,12 @@ type Server struct {
 	PivotStatus    PivotStatusProvider
 	TickerStore    *ticker.Store
 	TickerMonitor  *ticker.Monitor
+
+	// Pattern recognition
+	PatternBroker   *sse.Broker[pattern.Signal]
+	PatternHistory  *pattern.History
+	KlineStore      *kline.Store
+	SignalCombiner  *signalpkg.Combiner
 }
 
 func New(signalBroker *sse.Broker[signalpkg.Signal], history *signalpkg.History, allowedOrigins []string) *Server {
@@ -44,6 +53,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/history", s.handleHistory)
 	mux.HandleFunc("/api/pivot-status", s.handlePivotStatus)
 	mux.HandleFunc("/api/tickers", s.handleTickers)
+	mux.HandleFunc("/api/patterns", s.handlePatterns)
+	mux.HandleFunc("/api/klines", s.handleKlines)
+	mux.HandleFunc("/api/klines/stats", s.handleKlineStats)
+	mux.HandleFunc("/api/runtime", s.handleRuntime)
 
 	// 嵌入的静态文件
 	staticContent, _ := fs.Sub(staticFS, "static")
@@ -85,6 +98,162 @@ func (s *Server) handleTickers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(data)
+}
+
+// handlePatterns returns pattern signal history.
+// GET /api/patterns?limit=100&symbol=BTCUSDT&pattern=hammer&direction=bullish
+func (s *Server) handlePatterns(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if s.PatternHistory == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte("[]"))
+		return
+	}
+
+	q := r.URL.Query()
+	symbol := q.Get("symbol")
+	patternType := q.Get("pattern")
+	direction := q.Get("direction")
+	limitStr := q.Get("limit")
+
+	limit := 100
+	if limitStr != "" {
+		if v, err := strconv.Atoi(limitStr); err == nil && v > 0 {
+			limit = v
+		}
+	}
+
+	opts := pattern.QueryOptions{
+		Symbol:    symbol,
+		Pattern:   pattern.PatternType(patternType),
+		Direction: pattern.Direction(direction),
+		Limit:     limit,
+	}
+
+	res := s.PatternHistory.Query(opts)
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(res)
+}
+
+// handleKlines returns kline data for a symbol (for debugging).
+// GET /api/klines?symbol=BTCUSDT
+func (s *Server) handleKlines(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if s.KlineStore == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte("null"))
+		return
+	}
+
+	q := r.URL.Query()
+	symbol := q.Get("symbol")
+	if symbol == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"symbol parameter required"}`))
+		return
+	}
+
+	klines, ok := s.KlineStore.GetAllKlines(symbol)
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte("[]"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(klines)
+}
+
+// handleKlineStats returns statistics about kline data in memory.
+// GET /api/klines/stats
+func (s *Server) handleKlineStats(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if s.KlineStore == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"enabled":false}`))
+		return
+	}
+
+	stats := s.KlineStore.Stats()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(stats)
+}
+
+// RuntimeStats contains runtime statistics.
+type RuntimeStats struct {
+	Goroutines   int     `json:"goroutines"`
+	HeapMB       float64 `json:"heap_mb"`
+	SysMB        float64 `json:"sys_mb"`
+	NumGC        uint32  `json:"num_gc"`
+	KlineSymbols int     `json:"kline_symbols"`
+	Patterns     int     `json:"patterns"`
+	Signals      int     `json:"signals"`
+	Symbols      int     `json:"symbols"` // unique symbols in signal history
+	Uptime       string  `json:"uptime"`
+}
+
+var startTime = time.Now()
+
+// handleRuntime returns runtime statistics.
+// GET /api/runtime
+func (s *Server) handleRuntime(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	stats := RuntimeStats{
+		Goroutines: runtime.NumGoroutine(),
+		HeapMB:     float64(m.HeapAlloc) / 1024 / 1024,
+		SysMB:      float64(m.Sys) / 1024 / 1024,
+		NumGC:      m.NumGC,
+		Uptime:     time.Since(startTime).Round(time.Second).String(),
+	}
+
+	if s.KlineStore != nil {
+		stats.KlineSymbols = s.KlineStore.SymbolCount()
+	}
+	if s.PatternHistory != nil {
+		stats.Patterns = s.PatternHistory.Count()
+	}
+	if s.History != nil {
+		stats.Signals = s.History.Count()
+		stats.Symbols = s.History.SymbolCount()
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(stats)
 }
 
 func (s *Server) handlePivotStatus(w http.ResponseWriter, r *http.Request) {
@@ -166,8 +335,100 @@ func (s *Server) handleHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := s.History.Query(symbol, period, level, direction, source, limit)
+
+	// Enrich signals with related pattern information from PatternHistory
+	if s.PatternHistory != nil {
+		type EnrichedSignal struct {
+			signalpkg.Signal
+			RelatedPattern *RelatedPatternInfo `json:"related_pattern,omitempty"`
+		}
+
+		enriched := make([]EnrichedSignal, len(res))
+		for i, sig := range res {
+			enriched[i] = EnrichedSignal{Signal: sig}
+
+			// Find related patterns for this symbol within 60 minutes (before or after signal)
+			patterns := s.PatternHistory.QueryBySymbolAndTime(sig.Symbol, sig.TriggeredAt, 60*time.Minute)
+			if len(patterns) > 0 {
+				pat := patterns[0] // Use the closest pattern
+
+				// Determine correlation strength
+				correlation := "moderate"
+				if pat.Direction == pattern.DirectionNeutral {
+					correlation = "moderate"
+				} else {
+					pivotUp := sig.Direction == "up"
+					patternBullish := pat.Direction == pattern.DirectionBullish
+					if (pivotUp && patternBullish) || (!pivotUp && !patternBullish) {
+						correlation = "strong"
+					} else {
+						correlation = "weak"
+					}
+				}
+
+				// Calculate time difference
+				timeDiff := sig.TriggeredAt.Sub(pat.DetectedAt)
+				timeDiffStr := formatTimeDiff(timeDiff)
+
+				enriched[i].RelatedPattern = &RelatedPatternInfo{
+					ID:             pat.ID,
+					Pattern:        string(pat.Pattern),
+					PatternCN:      pat.PatternCN,
+					Direction:      string(pat.Direction),
+					Confidence:     pat.Confidence,
+					UpPercent:      pat.UpPercent,
+					DownPercent:    pat.DownPercent,
+					EfficiencyRank: pat.EfficiencyRank,
+					Correlation:    correlation,
+					DetectedAt:     pat.DetectedAt,
+					Count:          len(patterns),
+					TimeDiff:       timeDiffStr,
+				}
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(enriched)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(res)
+}
+
+// RelatedPatternInfo contains pattern information for enriched signals.
+type RelatedPatternInfo struct {
+	ID             string    `json:"id"`
+	Pattern        string    `json:"pattern"`
+	PatternCN      string    `json:"pattern_cn"`
+	Direction      string    `json:"direction"`
+	Confidence     int       `json:"confidence"`
+	UpPercent      int       `json:"up_percent"`
+	DownPercent    int       `json:"down_percent"`
+	EfficiencyRank string    `json:"efficiency_rank"`
+	Correlation    string    `json:"correlation"`
+	DetectedAt     time.Time `json:"detected_at"`
+	Count          int       `json:"count"`     // Number of patterns in time window
+	TimeDiff       string    `json:"time_diff"` // Human readable time difference
+}
+
+// formatTimeDiff formats a duration as a human readable string (e.g., "5m ago", "1h 30m ago")
+func formatTimeDiff(d time.Duration) string {
+	if d < 0 {
+		d = -d
+	}
+	if d < time.Minute {
+		return fmt.Sprintf("%ds前", int(d.Seconds()))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm前", int(d.Minutes()))
+	}
+	hours := int(d.Hours())
+	mins := int(d.Minutes()) % 60
+	if mins > 0 {
+		return fmt.Sprintf("%dh%dm前", hours, mins)
+	}
+	return fmt.Sprintf("%dh前", hours)
 }
 
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
@@ -232,6 +493,13 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 		defer s.TickerMonitor.Unsubscribe(tickerCh)
 	}
 
+	// 订阅 pattern 信号（如果可用）
+	var patternCh chan pattern.Signal
+	if s.PatternBroker != nil {
+		patternCh = s.PatternBroker.Subscribe(256)
+		defer s.PatternBroker.Unsubscribe(patternCh)
+	}
+
 	_, _ = fmt.Fprintf(w, ": connected %s\n\n", time.Now().UTC().Format(time.RFC3339))
 	flusher.Flush()
 
@@ -269,6 +537,19 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			_, _ = fmt.Fprintf(w, "event: ticker\n")
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", strings.ReplaceAll(string(b), "\n", ""))
+			flusher.Flush()
+
+		case pat, ok := <-patternCh:
+			if !ok {
+				patternCh = nil
+				continue
+			}
+			b, err := json.Marshal(pat)
+			if err != nil {
+				continue
+			}
+			_, _ = fmt.Fprintf(w, "event: pattern\n")
 			_, _ = fmt.Fprintf(w, "data: %s\n\n", strings.ReplaceAll(string(b), "\n", ""))
 			flusher.Flush()
 		}

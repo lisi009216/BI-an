@@ -233,19 +233,32 @@ func (r *Refresher) needsRefresh(period Period, loc *time.Location) bool {
 			return true
 		}
 	case PeriodWeekly:
-		today := time.Date(now.Year(), now.Month(), now.Day(), 8, 2, 0, 0, loc)
-		delta := (int(time.Monday) - int(now.Weekday()) + 7) % 7
-		thisMonday8am02 := today.AddDate(0, 0, -((7 - delta) % 7))
-		if now.Weekday() == time.Monday {
-			thisMonday8am02 = today
-		} else {
-			thisMonday8am02 = today.AddDate(0, 0, -int(now.Weekday()-time.Monday))
-		}
+		thisMonday8am02 := getThisWeekMonday(now, loc)
 		if !now.Before(thisMonday8am02) && snap.UpdatedAt.In(loc).Before(thisMonday8am02) {
 			return true
 		}
 	}
 	return false
+}
+
+// getThisWeekMonday 计算本周一 08:02 的时间
+// 修复：周日时 Weekday()=0，需要特殊处理，确保返回的是本周一而不是下周一
+func getThisWeekMonday(now time.Time, loc *time.Location) time.Time {
+	today8am02 := time.Date(now.Year(), now.Month(), now.Day(), 8, 2, 0, 0, loc)
+
+	// time.Weekday: Sunday=0, Monday=1, ..., Saturday=6
+	// 我们需要计算距离本周一的天数差
+	weekday := int(now.Weekday())
+	var daysFromMonday int
+	if weekday == 0 {
+		// 周日：距离本周一是 6 天前
+		daysFromMonday = 6
+	} else {
+		// 周一到周六：weekday - 1
+		daysFromMonday = weekday - 1
+	}
+
+	return today8am02.AddDate(0, 0, -daysFromMonday)
 }
 
 func (r *Refresher) loop(ctx context.Context, period Period, loc *time.Location) {

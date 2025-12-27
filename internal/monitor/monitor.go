@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"example.com/binance-pivot-monitor/internal/binance"
+	"example.com/binance-pivot-monitor/internal/kline"
+	"example.com/binance-pivot-monitor/internal/pattern"
 	"example.com/binance-pivot-monitor/internal/pivot"
 	signalpkg "example.com/binance-pivot-monitor/internal/signal"
 	"example.com/binance-pivot-monitor/internal/sse"
@@ -28,6 +30,13 @@ type Monitor struct {
 	Cooldown       *signalpkg.Cooldown
 	Source         string
 	HeartbeatEvery time.Duration
+
+	// K-line pattern recognition
+	KlineStore      *kline.Store
+	PatternDetector *pattern.Detector
+	PatternHistory  *pattern.History
+	PatternBroker   *sse.Broker[pattern.Signal]
+	SignalCombiner  *signalpkg.Combiner
 
 	idCounter   uint64
 	lastPrice   map[string]float64
@@ -43,6 +52,43 @@ func New(pivotStore *pivot.Store, broker *sse.Broker[signalpkg.Signal], history 
 		Source:     "markPrice",
 		lastPrice:  make(map[string]float64),
 	}
+}
+
+// MonitorConfig holds configuration for the monitor.
+type MonitorConfig struct {
+	PivotStore      *pivot.Store
+	Broker          *sse.Broker[signalpkg.Signal]
+	History         *signalpkg.History
+	Cooldown        *signalpkg.Cooldown
+	KlineStore      *kline.Store
+	PatternDetector *pattern.Detector
+	PatternHistory  *pattern.History
+	PatternBroker   *sse.Broker[pattern.Signal]
+	SignalCombiner  *signalpkg.Combiner
+}
+
+// NewWithConfig creates a new monitor with full configuration.
+func NewWithConfig(cfg MonitorConfig) *Monitor {
+	m := &Monitor{
+		PivotStore:      cfg.PivotStore,
+		Broker:          cfg.Broker,
+		History:         cfg.History,
+		Cooldown:        cfg.Cooldown,
+		KlineStore:      cfg.KlineStore,
+		PatternDetector: cfg.PatternDetector,
+		PatternHistory:  cfg.PatternHistory,
+		PatternBroker:   cfg.PatternBroker,
+		SignalCombiner:  cfg.SignalCombiner,
+		Source:          "markPrice",
+		lastPrice:       make(map[string]float64),
+	}
+
+	// Set up kline close callback for pattern detection
+	if m.KlineStore != nil && m.PatternDetector != nil {
+		m.KlineStore.SetOnClose(m.onKlineClose)
+	}
+
+	return m
 }
 
 func decodeMarkPriceEvents(b []byte) ([]binance.MarkPriceEvent, bool) {
@@ -346,6 +392,15 @@ func (m *Monitor) onPrice(symbol string, price float64, ts time.Time) {
 	m.lastPrice[symbol] = price
 	if !ok {
 		atomic.AddInt64(&m.symbolsSeen, 1)
+	}
+
+	// Update kline data (if enabled)
+	if m.KlineStore != nil {
+		m.KlineStore.Update(symbol, price, ts)
+	}
+
+	// Check pivot levels (only if we have previous price)
+	if !ok {
 		return
 	}
 
@@ -414,6 +469,11 @@ func (m *Monitor) emit(symbol string, period pivot.Period, levelName string, pri
 	if m.Broker != nil {
 		m.Broker.Publish(sig)
 	}
+
+	// Add to signal combiner for correlation with pattern signals
+	if m.SignalCombiner != nil {
+		m.SignalCombiner.AddPivotSignal(sig)
+	}
 }
 
 func sleepContext(ctx context.Context, d time.Duration) bool {
@@ -435,4 +495,80 @@ func minDuration(a, b time.Duration) time.Duration {
 		return a
 	}
 	return b
+}
+
+// onKlineClose is called when a kline closes.
+// It triggers pattern detection asynchronously.
+// klines is a deep copy snapshot, safe for async use.
+func (m *Monitor) onKlineClose(symbol string, klines []kline.Kline) {
+	// Skip if pattern detection is not enabled
+	if m.PatternDetector == nil {
+		return
+	}
+
+	// Skip if we don't have pivot data for this symbol (per design: Property 11)
+	// This limits detection to symbols we're actively monitoring
+	hasPivot := false
+	if _, ok := m.PivotStore.GetLevels(pivot.PeriodDaily, symbol); ok {
+		hasPivot = true
+	}
+	if !hasPivot {
+		if _, ok := m.PivotStore.GetLevels(pivot.PeriodWeekly, symbol); ok {
+			hasPivot = true
+		}
+	}
+	if !hasPivot {
+		return
+	}
+
+	// Detect patterns with timing (Requirement 7.5: warn if >100ms)
+	startTime := time.Now()
+	patterns := m.PatternDetector.Detect(klines)
+	elapsed := time.Since(startTime)
+	if elapsed > 100*time.Millisecond {
+		log.Printf("pattern detection slow: symbol=%s elapsed=%v", symbol, elapsed)
+	}
+
+	if len(patterns) == 0 {
+		return
+	}
+
+	// Get kline close time from the last kline
+	var klineTime time.Time
+	if len(klines) > 0 {
+		lastKline := klines[len(klines)-1]
+		klineTime = lastKline.CloseTime
+		if klineTime.IsZero() {
+			klineTime = lastKline.OpenTime
+		}
+	}
+
+	// Emit signals for each detected pattern
+	for _, p := range patterns {
+		m.emitPatternSignal(symbol, p, klineTime)
+	}
+}
+
+// emitPatternSignal creates and emits a pattern signal.
+func (m *Monitor) emitPatternSignal(symbol string, p pattern.DetectedPattern, klineTime time.Time) {
+	sig := pattern.NewSignal(symbol, p.Type, p.Direction, p.Confidence, klineTime)
+
+	log.Printf("pattern %s %s %s confidence=%d", symbol, p.Type, p.Direction, p.Confidence)
+
+	// Record to history
+	if m.PatternHistory != nil {
+		if err := m.PatternHistory.Add(sig); err != nil {
+			log.Printf("pattern history add error: %v", err)
+		}
+	}
+
+	// Publish via SSE
+	if m.PatternBroker != nil {
+		m.PatternBroker.Publish(sig)
+	}
+
+	// Add to signal combiner for correlation with pivot signals
+	if m.SignalCombiner != nil {
+		m.SignalCombiner.AddPatternSignal(sig)
+	}
 }

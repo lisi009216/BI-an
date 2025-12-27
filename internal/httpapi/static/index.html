@@ -94,6 +94,48 @@
             color: var(--text)
         }
 
+        /* Runtime stats */
+        .runtime-stats {
+            display: flex;
+            gap: 6px;
+            padding: 4px 8px;
+            background: var(--vessel);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background .15s
+        }
+
+        .runtime-stats:hover {
+            background: var(--tag-bg)
+        }
+
+        .runtime-stats .stat {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 10px;
+            color: var(--text-secondary)
+        }
+
+        .runtime-stats .stat-label {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            min-width: 8px
+        }
+
+        .runtime-stats .stat span:last-child {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 10px;
+            color: var(--text)
+        }
+
+        @media(max-width:520px) {
+            .runtime-stats {
+                display: none
+            }
+        }
+
         .pill {
             font-size: 11px;
             padding: 4px 10px;
@@ -559,6 +601,232 @@
                 width: 60px
             }
         }
+
+        /* Pattern item styles */
+        .pattern-item .tags .rate {
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center
+        }
+
+        .pattern-item .efficiency {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-right: 8px
+        }
+
+        .pattern-item .source-tag {
+            font-size: 10px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            background: var(--vessel);
+            color: var(--text-tertiary)
+        }
+
+        /* Pattern badge on pivot signals */
+        .pattern-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            white-space: nowrap
+        }
+
+        .pattern-badge.bullish {
+            background: var(--buy-bg);
+            color: var(--buy);
+            border: 1px solid rgba(46, 189, 133, 0.3)
+        }
+
+        .pattern-badge.bearish {
+            background: var(--sell-bg);
+            color: var(--sell);
+            border: 1px solid rgba(246, 70, 93, 0.3)
+        }
+
+        .pattern-badge.neutral {
+            background: var(--vessel);
+            color: var(--text-secondary);
+            border: 1px solid var(--line)
+        }
+
+        /* Pattern detail modal */
+        .pattern-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000
+        }
+
+        .pattern-modal-content {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            width: 320px;
+            max-width: 90vw
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line)
+        }
+
+        .modal-header .symbol {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text)
+        }
+
+        .modal-header .pattern-name {
+            font-size: 13px;
+            color: var(--yellow)
+        }
+
+        .modal-header .close-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 4px
+        }
+
+        .modal-header .close-btn:hover {
+            color: var(--text)
+        }
+
+        .modal-body {
+            padding: 12px 16px
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--line)
+        }
+
+        .stat-row:last-child {
+            border-bottom: none
+        }
+
+        .stat-row .label {
+            font-size: 12px;
+            color: var(--text-secondary)
+        }
+
+        .stat-row .value {
+            font-size: 12px;
+            color: var(--text);
+            font-weight: 500
+        }
+
+        .stat-row .value.bullish {
+            color: var(--buy)
+        }
+
+        .stat-row .value.bearish {
+            color: var(--sell)
+        }
+
+        .stat-row .bar {
+            width: 60px;
+            height: 6px;
+            background: var(--vessel);
+            border-radius: 3px;
+            margin-left: 8px
+        }
+
+        .stat-row .bar .fill {
+            height: 100%;
+            border-radius: 3px
+        }
+
+        .stat-row .bar .fill.up {
+            background: var(--buy)
+        }
+
+        .stat-row .bar .fill.down {
+            background: var(--sell)
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--line)
+        }
+
+        .modal-footer button {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            border: none
+        }
+
+        .modal-footer .btn-trade {
+            background: var(--yellow);
+            color: #202630
+        }
+
+        .modal-footer .btn-filter {
+            background: var(--vessel);
+            color: var(--text)
+        }
+
+        /* Efficiency rank colors */
+        .efficiency-A {
+            color: #22c55e !important
+        }
+
+        .efficiency-B {
+            color: #84cc16 !important
+        }
+
+        .efficiency-C {
+            color: #eab308 !important
+        }
+
+        .efficiency-D {
+            color: #f97316 !important
+        }
+
+        .efficiency-E {
+            color: #ef4444 !important
+        }
+
+        @media(max-width:480px) {
+            .pattern-item .tags .rate {
+                font-size: 11px;
+                min-width: 36px
+            }
+
+            .pattern-badge {
+                font-size: 9px;
+                padding: 1px 4px
+            }
+
+            .pattern-modal-content {
+                width: 95vw;
+                margin: 10px
+            }
+        }
     </style>
 </head>
 
@@ -567,6 +835,12 @@
     <div class="header-area">
         <header>
             <div class="title">Pivot Monitor</div>
+            <div class="runtime-stats" id="runtimeStats" title="Click to refresh">
+                <span class="stat"><span class="stat-label">G</span><span id="rtGoroutines">-</span></span>
+                <span class="stat"><span class="stat-label">K</span><span id="rtKlines">-</span></span>
+                <span class="stat"><span class="stat-label">S</span><span id="rtSignals">-</span></span>
+                <span class="stat"><span class="stat-label">M</span><span id="rtHeap">-</span></span>
+            </div>
             <div class="row">
                 <span id="status" class="pill">disconnected</span>
                 <button id="refresh" type="button">Refresh</button>
@@ -627,10 +901,43 @@
         <div class="row" style="margin-top:6px;justify-content:space-between">
             <div class="tabs">
                 <button class="tab active" data-view="signals">Signals</button>
+                <button class="tab" data-view="patterns">Patterns</button>
                 <button class="tab" data-view="volume">Volume</button>
                 <button class="tab" data-view="trades">Trades</button>
             </div>
             <div id="hint" class="hint">Signals: -/-</div>
+        </div>
+        <!-- Pattern filters (hidden by default) -->
+        <div id="patternFilters" class="row" style="margin-top:6px;display:none">
+            <select id="patternType">
+                <option value="">All Patterns</option>
+                <optgroup label="High Efficiency (A/B)">
+                    <option value="engulfing">吞没形态 (67%)</option>
+                    <option value="morning_star">晨星 (70%)</option>
+                    <option value="evening_star">暮星 (72%)</option>
+                    <option value="three_black">三只乌鸦 (78%)</option>
+                    <option value="dark_cloud_cover">乌云盖顶 (70%)</option>
+                    <option value="hammer">锤子线 (60%)</option>
+                    <option value="shooting_star">流星线 (62%)</option>
+                </optgroup>
+                <optgroup label="Medium Efficiency (C/D)">
+                    <option value="three_white">三白兵 (82%)</option>
+                    <option value="harami">孕线 (53%)</option>
+                    <option value="doji">十字星 (57%)</option>
+                </optgroup>
+            </select>
+            <select id="efficiencyRank">
+                <option value="">All Ranks</option>
+                <option value="A">A (Highest)</option>
+                <option value="B">B (High)</option>
+                <option value="C">C (Medium)</option>
+                <option value="D">D (Low)</option>
+            </select>
+            <select id="patternDirection">
+                <option value="">All Directions</option>
+                <option value="bullish">Bullish ↑</option>
+                <option value="bearish">Bearish ↓</option>
+            </select>
         </div>
     </div>
     <!-- 滚动列表区域 -->
@@ -639,8 +946,61 @@
             <div id="signalScroll" class="clusterize-scroll">
                 <div id="signalList" class="clusterize-content"></div>
             </div>
+            <div id="patternScroll" class="clusterize-scroll" style="display:none">
+                <div id="patternList" class="clusterize-content"></div>
+            </div>
             <div id="rankingScroll" class="clusterize-scroll" style="display:none">
                 <div id="rankingList" class="clusterize-content"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Pattern Detail Modal -->
+    <div id="patternModal" class="pattern-modal" style="display:none">
+        <div class="pattern-modal-content">
+            <div class="modal-header">
+                <span id="modalSymbol" class="symbol"></span>
+                <span id="modalPatternName" class="pattern-name"></span>
+                <button class="close-btn" onclick="hidePatternModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="stat-row">
+                    <span class="label">Direction</span>
+                    <span id="modalDirection" class="value"></span>
+                </div>
+                <div class="stat-row">
+                    <span class="label">Up Probability</span>
+                    <span id="modalUpPct" class="value"></span>
+                    <div class="bar">
+                        <div id="modalUpBar" class="fill up"></div>
+                    </div>
+                </div>
+                <div class="stat-row">
+                    <span class="label">Down Probability</span>
+                    <span id="modalDownPct" class="value"></span>
+                    <div class="bar">
+                        <div id="modalDownBar" class="fill down"></div>
+                    </div>
+                </div>
+                <div class="stat-row">
+                    <span class="label">Efficiency Rank</span>
+                    <span id="modalEfficiency" class="value"></span>
+                </div>
+                <div class="stat-row">
+                    <span class="label">Confidence</span>
+                    <span id="modalConfidence" class="value"></span>
+                </div>
+                <div class="stat-row">
+                    <span class="label">Source</span>
+                    <span id="modalSource" class="value"></span>
+                </div>
+                <div class="stat-row">
+                    <span class="label">Detected At</span>
+                    <span id="modalDetectedAt" class="value"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modalTradeBtn" class="btn-trade">Trade</button>
+                <button id="modalFilterBtn" class="btn-filter">Filter</button>
             </div>
         </div>
     </div>

@@ -20,8 +20,7 @@ binance-pivot-monitor
 Thumbs.db
 
 # Data (runtime generated)
-data/pivots/*.json
-data/signals/*.jsonl
+data/
 
 # Build artifacts
 dist/
