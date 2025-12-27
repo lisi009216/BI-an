@@ -604,15 +604,43 @@
 
     // ==================== SSE 连接 ====================
     let tickerUpdatePending = false;
+    let sseReconnectTimer = null;
+    let sseReconnectDelay = 1000;
+    const SSE_MAX_DELAY = 30000;
 
     function connectSSE() {
+        // 清除之前的重连定时器
+        if (sseReconnectTimer) {
+            clearTimeout(sseReconnectTimer);
+            sseReconnectTimer = null;
+        }
+
         let es;
-        try { es = new EventSource("/api/sse"); }
-        catch (_) { setStatus("disconnected"); return; }
+        try {
+            es = new EventSource("/api/sse");
+        } catch (_) {
+            setStatus("disconnected");
+            scheduleReconnect();
+            return;
+        }
 
         setStatus("reconnecting");
-        es.onopen = () => setStatus("connected");
-        es.onerror = () => setStatus(es.readyState === 2 ? "disconnected" : "reconnecting");
+
+        es.onopen = () => {
+            setStatus("connected");
+            sseReconnectDelay = 1000; // 重置重连延迟
+        };
+
+        es.onerror = () => {
+            const state = es.readyState;
+            if (state === EventSource.CLOSED) {
+                setStatus("disconnected");
+                es.close();
+                scheduleReconnect();
+            } else {
+                setStatus("reconnecting");
+            }
+        };
 
         // 新信号
         es.addEventListener("signal", e => {
@@ -664,6 +692,18 @@
                 }
             } catch (_) { }
         });
+    }
+
+    function scheduleReconnect() {
+        if (sseReconnectTimer) return;
+
+        sseReconnectTimer = setTimeout(() => {
+            sseReconnectTimer = null;
+            connectSSE();
+        }, sseReconnectDelay);
+
+        // 指数退避，最大 30 秒
+        sseReconnectDelay = Math.min(sseReconnectDelay * 1.5, SSE_MAX_DELAY);
     }
 
     // 只更新可视区域的 DOM
