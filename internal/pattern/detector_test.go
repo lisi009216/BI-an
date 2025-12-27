@@ -425,3 +425,266 @@ func TestIsUptrend(t *testing.T) {
 		})
 	}
 }
+
+
+// Test deduplication logic
+func TestDeduplicatePatterns(t *testing.T) {
+	tests := []struct {
+		name           string
+		talibPatterns  []DetectedPattern
+		customPatterns []DetectedPattern
+		expectedTypes  []PatternType
+		suppressedTypes []PatternType
+	}{
+		{
+			name: "ThreeInside suppresses Harami",
+			talibPatterns: []DetectedPattern{
+				{Type: PatternThreeInside, Direction: DirectionBullish, Confidence: 80},
+			},
+			customPatterns: []DetectedPattern{
+				{Type: PatternHarami, Direction: DirectionBullish, Confidence: 65},
+				{Type: PatternEngulfing, Direction: DirectionBullish, Confidence: 75},
+			},
+			expectedTypes:   []PatternType{PatternThreeInside, PatternEngulfing},
+			suppressedTypes: []PatternType{PatternHarami},
+		},
+		{
+			name: "ThreeOutside suppresses Engulfing",
+			talibPatterns: []DetectedPattern{
+				{Type: PatternThreeOutside, Direction: DirectionBullish, Confidence: 80},
+			},
+			customPatterns: []DetectedPattern{
+				{Type: PatternEngulfing, Direction: DirectionBullish, Confidence: 75},
+				{Type: PatternHarami, Direction: DirectionBullish, Confidence: 65},
+			},
+			expectedTypes:   []PatternType{PatternThreeOutside, PatternHarami},
+			suppressedTypes: []PatternType{PatternEngulfing},
+		},
+		{
+			name: "ThreeInside suppresses HaramiCross",
+			talibPatterns: []DetectedPattern{
+				{Type: PatternThreeInside, Direction: DirectionBearish, Confidence: 80},
+			},
+			customPatterns: []DetectedPattern{
+				{Type: PatternHaramiCross, Direction: DirectionBearish, Confidence: 70},
+			},
+			expectedTypes:   []PatternType{PatternThreeInside},
+			suppressedTypes: []PatternType{PatternHaramiCross},
+		},
+		{
+			name: "Doji does not suppress DragonflyDoji",
+			talibPatterns: []DetectedPattern{
+				{Type: PatternDoji, Direction: DirectionNeutral, Confidence: 80},
+			},
+			customPatterns: []DetectedPattern{
+				{Type: PatternDragonflyDoji, Direction: DirectionBullish, Confidence: 65},
+			},
+			expectedTypes:   []PatternType{PatternDoji, PatternDragonflyDoji},
+			suppressedTypes: []PatternType{},
+		},
+		{
+			name: "No talib patterns - all custom kept",
+			talibPatterns: []DetectedPattern{},
+			customPatterns: []DetectedPattern{
+				{Type: PatternHammer, Direction: DirectionBullish, Confidence: 70},
+				{Type: PatternEngulfing, Direction: DirectionBullish, Confidence: 75},
+			},
+			expectedTypes:   []PatternType{PatternHammer, PatternEngulfing},
+			suppressedTypes: []PatternType{},
+		},
+		{
+			name: "Multiple talib patterns with multiple suppressions",
+			talibPatterns: []DetectedPattern{
+				{Type: PatternThreeInside, Direction: DirectionBullish, Confidence: 80},
+				{Type: PatternThreeOutside, Direction: DirectionBullish, Confidence: 85},
+			},
+			customPatterns: []DetectedPattern{
+				{Type: PatternHarami, Direction: DirectionBullish, Confidence: 65},
+				{Type: PatternEngulfing, Direction: DirectionBullish, Confidence: 75},
+				{Type: PatternHammer, Direction: DirectionBullish, Confidence: 70},
+			},
+			expectedTypes:   []PatternType{PatternThreeInside, PatternThreeOutside, PatternHammer},
+			suppressedTypes: []PatternType{PatternHarami, PatternEngulfing},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := deduplicatePatterns(tt.talibPatterns, tt.customPatterns)
+
+			// Check expected types are present
+			resultTypes := make(map[PatternType]bool)
+			for _, p := range result {
+				resultTypes[p.Type] = true
+			}
+
+			for _, expected := range tt.expectedTypes {
+				if !resultTypes[expected] {
+					t.Errorf("Expected pattern %v not found in result", expected)
+				}
+			}
+
+			// Check suppressed types are NOT present
+			for _, suppressed := range tt.suppressedTypes {
+				if resultTypes[suppressed] {
+					t.Errorf("Suppressed pattern %v should not be in result", suppressed)
+				}
+			}
+
+			// Check total count
+			if len(result) != len(tt.expectedTypes) {
+				t.Errorf("Expected %d patterns, got %d", len(tt.expectedTypes), len(result))
+			}
+		})
+	}
+}
+
+// Test that deduplication preserves pattern order (talib first, then custom)
+func TestDeduplicatePatterns_Order(t *testing.T) {
+	talibPatterns := []DetectedPattern{
+		{Type: PatternDoji, Direction: DirectionNeutral, Confidence: 80},
+		{Type: PatternDojiStar, Direction: DirectionBullish, Confidence: 75},
+	}
+	customPatterns := []DetectedPattern{
+		{Type: PatternHammer, Direction: DirectionBullish, Confidence: 70},
+		{Type: PatternEngulfing, Direction: DirectionBullish, Confidence: 75},
+	}
+
+	result := deduplicatePatterns(talibPatterns, customPatterns)
+
+	// First two should be talib patterns
+	if result[0].Type != PatternDoji {
+		t.Errorf("Expected first pattern to be Doji, got %v", result[0].Type)
+	}
+	if result[1].Type != PatternDojiStar {
+		t.Errorf("Expected second pattern to be DojiStar, got %v", result[1].Type)
+	}
+	// Last two should be custom patterns
+	if result[2].Type != PatternHammer {
+		t.Errorf("Expected third pattern to be Hammer, got %v", result[2].Type)
+	}
+	if result[3].Type != PatternEngulfing {
+		t.Errorf("Expected fourth pattern to be Engulfing, got %v", result[3].Type)
+	}
+}
+
+// Property test: Deduplication never loses talib patterns
+func TestProperty_DeduplicationPreservesTalib(t *testing.T) {
+	properties := gopter.NewProperties(nil)
+
+	allPatternTypes := []PatternType{
+		PatternDoji, PatternDojiStar, PatternThreeInside, PatternThreeOutside,
+		PatternHammer, PatternEngulfing, PatternHarami, PatternHaramiCross,
+	}
+
+	properties.Property("All talib patterns are preserved after deduplication", prop.ForAll(
+		func(talibIndices, customIndices []int) bool {
+			// Build talib patterns
+			var talibPatterns []DetectedPattern
+			for _, idx := range talibIndices {
+				if idx >= 0 && idx < len(allPatternTypes) {
+					talibPatterns = append(talibPatterns, DetectedPattern{
+						Type:       allPatternTypes[idx],
+						Direction:  DirectionBullish,
+						Confidence: 80,
+					})
+				}
+			}
+
+			// Build custom patterns
+			var customPatterns []DetectedPattern
+			for _, idx := range customIndices {
+				if idx >= 0 && idx < len(allPatternTypes) {
+					customPatterns = append(customPatterns, DetectedPattern{
+						Type:       allPatternTypes[idx],
+						Direction:  DirectionBullish,
+						Confidence: 70,
+					})
+				}
+			}
+
+			result := deduplicatePatterns(talibPatterns, customPatterns)
+
+			// All talib patterns must be in result
+			resultTypes := make(map[PatternType]bool)
+			for _, p := range result {
+				resultTypes[p.Type] = true
+			}
+
+			for _, tp := range talibPatterns {
+				if !resultTypes[tp.Type] {
+					return false
+				}
+			}
+
+			return true
+		},
+		gen.SliceOf(gen.IntRange(0, 7)),
+		gen.SliceOf(gen.IntRange(0, 7)),
+	))
+
+	properties.TestingRun(t)
+}
+
+
+// Test that low-confidence talib patterns don't suppress high-confidence custom patterns
+func TestDetect_FilterBeforeDedup(t *testing.T) {
+	// Scenario: talib ThreeInside at 50 confidence, custom Harami at 85 confidence
+	// With MinConfidence=80:
+	// - ThreeInside (50) should be filtered out
+	// - Harami (85) should survive (not suppressed by filtered-out ThreeInside)
+
+	talibPatterns := []DetectedPattern{
+		{Type: PatternThreeInside, Direction: DirectionBullish, Confidence: 50}, // Below threshold
+	}
+	customPatterns := []DetectedPattern{
+		{Type: PatternHarami, Direction: DirectionBullish, Confidence: 85}, // Above threshold
+	}
+
+	// Simulate the correct behavior: filter first (threshold=80), then dedup
+	var filteredTalib []DetectedPattern
+	for _, p := range talibPatterns {
+		if p.Confidence >= 80 {
+			filteredTalib = append(filteredTalib, p)
+		}
+	}
+	var filteredCustom []DetectedPattern
+	for _, p := range customPatterns {
+		if p.Confidence >= 80 {
+			filteredCustom = append(filteredCustom, p)
+		}
+	}
+
+	result := deduplicatePatterns(filteredTalib, filteredCustom)
+
+	// Harami should survive because ThreeInside was filtered out
+	if len(result) != 1 {
+		t.Errorf("Expected 1 pattern, got %d", len(result))
+	}
+	if len(result) > 0 && result[0].Type != PatternHarami {
+		t.Errorf("Expected Harami pattern, got %v", result[0].Type)
+	}
+}
+
+// Test the full Detect flow with confidence filtering
+func TestDetect_FullFlowWithConfidenceFilter(t *testing.T) {
+	// This test verifies the actual Detect method behavior
+	// We use a high confidence threshold to ensure only high-confidence patterns pass
+
+	detector := NewDetector(DetectorConfig{MinConfidence: 90})
+
+	// Create klines for a simple pattern
+	klines := []kline.Kline{
+		makeKline(100, 100, 95, 96),
+		makeKline(95, 105, 94, 104),
+	}
+
+	patterns := detector.Detect(klines)
+
+	// All returned patterns should have confidence >= 90
+	for _, p := range patterns {
+		if p.Confidence < 90 {
+			t.Errorf("Pattern %v has confidence %d, expected >= 90", p.Type, p.Confidence)
+		}
+	}
+}

@@ -61,26 +61,92 @@ func (d *Detector) Detect(klines []kline.Kline) []DetectedPattern {
 		return nil
 	}
 
-	var patterns []DetectedPattern
-
-	// Detect talib-cdl-go patterns
-	patterns = append(patterns, d.detectTalibPatterns(klines)...)
+	// Detect talib-cdl-go patterns first (higher priority)
+	talibPatterns := d.detectTalibPatterns(klines)
 
 	// Detect custom patterns
-	patterns = append(patterns, d.detectCustomPatterns(klines)...)
+	customPatterns := d.detectCustomPatterns(klines)
 
-	// Filter by minimum confidence
-	var filtered []DetectedPattern
-	for _, p := range patterns {
+	// Filter by minimum confidence BEFORE deduplication
+	// This ensures low-confidence talib patterns don't suppress high-confidence custom patterns
+	var filteredTalib []DetectedPattern
+	for _, p := range talibPatterns {
 		if p.Confidence >= d.config.MinConfidence {
 			if d.config.HighEfficiencyOnly && !IsHighEfficiency(p.Type) {
 				continue
 			}
-			filtered = append(filtered, p)
+			filteredTalib = append(filteredTalib, p)
 		}
 	}
 
-	return filtered
+	var filteredCustom []DetectedPattern
+	for _, p := range customPatterns {
+		if p.Confidence >= d.config.MinConfidence {
+			if d.config.HighEfficiencyOnly && !IsHighEfficiency(p.Type) {
+				continue
+			}
+			filteredCustom = append(filteredCustom, p)
+		}
+	}
+
+	// Deduplicate: only filtered talib patterns suppress custom patterns
+	return deduplicatePatterns(filteredTalib, filteredCustom)
+}
+
+// patternConflicts defines which custom patterns should be suppressed when talib patterns are detected.
+// Key: talib pattern type, Value: list of custom pattern types to suppress
+// Note: Only patterns that pass the confidence threshold participate in deduplication.
+var patternConflicts = map[PatternType][]PatternType{
+	// Doji (talib, neutral) does NOT suppress Dragonfly/Gravestone/Hammer/HangingMan/ShootingStar
+	// Reason: These are more specific patterns with directional signals, which are more valuable
+	// than a generic neutral Doji signal. Keep both for maximum information.
+	PatternDoji: {},
+
+	// DojiStar (talib 2-bar) vs Morning/Evening Doji Star (custom 3-bar)
+	// These are different patterns (2-bar vs 3-bar), signal at different K-lines
+	// Keep both as they provide complementary information
+	PatternDojiStar: {},
+
+	// ThreeInside (talib 3-bar) includes Harami (custom 2-bar) as first two bars
+	// Suppress Harami/HaramiCross when ThreeInside is detected to avoid redundant signals
+	PatternThreeInside: {PatternHarami, PatternHaramiCross},
+
+	// ThreeOutside (talib 3-bar) includes Engulfing (custom 2-bar) as first two bars
+	// Suppress Engulfing when ThreeOutside is detected
+	PatternThreeOutside: {PatternEngulfing},
+}
+
+// deduplicatePatterns merges talib and custom patterns, removing conflicts.
+// talib patterns have priority; custom patterns are suppressed if they conflict.
+func deduplicatePatterns(talibPatterns, customPatterns []DetectedPattern) []DetectedPattern {
+	// Build set of talib pattern types
+	talibTypes := make(map[PatternType]bool)
+	for _, p := range talibPatterns {
+		talibTypes[p.Type] = true
+	}
+
+	// Build set of custom patterns to suppress
+	suppressSet := make(map[PatternType]bool)
+	for talibType := range talibTypes {
+		if conflicts, ok := patternConflicts[talibType]; ok {
+			for _, conflictType := range conflicts {
+				suppressSet[conflictType] = true
+			}
+		}
+	}
+
+	// Start with all talib patterns
+	result := make([]DetectedPattern, len(talibPatterns))
+	copy(result, talibPatterns)
+
+	// Add custom patterns that are not suppressed
+	for _, p := range customPatterns {
+		if !suppressSet[p.Type] {
+			result = append(result, p)
+		}
+	}
+
+	return result
 }
 
 // detectTalibPatterns detects patterns using talib-cdl-go library.

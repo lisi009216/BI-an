@@ -134,9 +134,10 @@ func isUptrend(klines []kline.Kline) bool {
 }
 
 // isDoji checks if a kline is a doji (very small body).
+// Excludes zero-range klines to avoid false positives in low-liquidity data.
 func isDoji(k *kline.Kline) bool {
 	if k.Range() == 0 {
-		return true
+		return false // 零波动不算 doji，避免极端数据误报
 	}
 	return k.Body()/k.Range() < 0.1
 }
@@ -463,8 +464,8 @@ func detectHarami(klines []kline.Kline) (bool, Direction, int) {
 	prev := &klines[len(klines)-2]
 	curr := &klines[len(klines)-1]
 
-	// Previous must have significant body
-	if prev.Body() < prev.Range()*0.5 {
+	// Previous must have significant body (exclude zero-range)
+	if prev.Range() == 0 || prev.Body() < prev.Range()*0.5 {
 		return false, "", 0
 	}
 
@@ -498,8 +499,8 @@ func detectHaramiCross(klines []kline.Kline) (bool, Direction, int) {
 	prev := &klines[len(klines)-2]
 	curr := &klines[len(klines)-1]
 
-	// Previous must have significant body
-	if prev.Body() < prev.Range()*0.5 {
+	// Previous must have significant body (exclude zero-range)
+	if prev.Range() == 0 || prev.Body() < prev.Range()*0.5 {
 		return false, "", 0
 	}
 
@@ -508,11 +509,14 @@ func detectHaramiCross(klines []kline.Kline) (bool, Direction, int) {
 		return false, "", 0
 	}
 
-	// Current must be inside previous body
+	// Current doji's BODY (not high/low) must be inside previous body
+	// This allows shadows to extend beyond, which is standard for harami cross
 	prevBodyHigh := max(prev.Open, prev.Close)
 	prevBodyLow := min(prev.Open, prev.Close)
+	currBodyHigh := max(curr.Open, curr.Close)
+	currBodyLow := min(curr.Open, curr.Close)
 
-	if curr.High > prevBodyHigh || curr.Low < prevBodyLow {
+	if currBodyHigh > prevBodyHigh || currBodyLow < prevBodyLow {
 		return false, "", 0
 	}
 
