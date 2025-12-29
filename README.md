@@ -42,6 +42,14 @@ Binance Pivot Monitor is a real-time cryptocurrency pivot point monitoring syste
 
 ### Version Notes (Latest)
 
+- **UI Improvements**:
+  - Filter settings (levels, period, direction, volume) now persist in localStorage
+  - Header layout optimized with search input and sound toggle
+  - iOS PWA full support: safe-area handling, keyboard resize fix, no black bars
+  - Signal items support dynamic height for K-line pattern badges
+  - Footer stats bar showing SSE subscribers, goroutines, heap, symbols, signals, uptime, version
+  - Pivot levels display in signal items with Intersection Observer for performance
+  - Debounced batch fetching for pivot data during scrolling
 - Added candlestick pattern recognition (talib + custom) with confidence/direction and SSE pattern events
 - Added pattern history persistence with compaction and kline store stats APIs
 - Added `/api/patterns`, `/api/klines`, `/api/klines/stats`, and `/api/runtime`
@@ -355,6 +363,14 @@ Binance Pivot Monitor 是一个实时加密货币枢轴点监控系统，专为�
 
 ### 版本说明（最新）
 
+- **UI 改进**：
+  - 过滤器设置（级别、周期、方向、成交额）现在会保存到 localStorage
+  - 标题栏布局优化，集成搜索框和声音开关
+  - iOS PWA 完整支持：安全区域处理、键盘弹出修复、无黑边
+  - 信号项支持动态高度，适配 K 线形态徽章换行
+  - 底部状态栏显示 SSE 订阅数、协程数、内存、交易对数、信号数、运行时间、版本
+  - 信号项中显示枢轴点位，使用 Intersection Observer 优化性能
+  - 滚动时防抖批量获取枢轴点数据
 - 新增 K 线形态识别（talib + 自定义）、形态 SSE 推送与置信度信息
 - 新增形态历史持久化与自动截断，以及 K 线存储统计接口
 - 新增 `/api/patterns`、`/api/klines`、`/api/klines/stats`、`/api/runtime`
