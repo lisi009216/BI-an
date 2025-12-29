@@ -60,12 +60,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/klines/stats", s.handleKlineStats)
 	mux.HandleFunc("/api/runtime", s.handleRuntime)
 
-	// 嵌入的静态文件
+	// 嵌入的静态文件（包括图标）
 	staticContent, _ := fs.Sub(staticFS, "static")
-	mux.Handle("/static/app.js", http.StripPrefix("/static/", http.FileServer(http.FS(staticContent))))
-
-	// 外部静态文件（图标等）
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticContent))))
 
 	return s.cors(mux)
 }
