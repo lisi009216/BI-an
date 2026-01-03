@@ -19,6 +19,7 @@ import (
 	"example.com/binance-pivot-monitor/internal/monitor"
 	"example.com/binance-pivot-monitor/internal/pattern"
 	"example.com/binance-pivot-monitor/internal/pivot"
+	"example.com/binance-pivot-monitor/internal/ranking"
 	signalpkg "example.com/binance-pivot-monitor/internal/signal"
 	"example.com/binance-pivot-monitor/internal/sse"
 	"example.com/binance-pivot-monitor/internal/ticker"
@@ -144,6 +145,41 @@ func main() {
 	tickerMon.BatchInterval = *tickerBatchInterval
 	go tickerMon.Run(ctx)
 
+	// Ranking monitor
+	rankingEnabled := getEnvBool("RANKING_ENABLED", true)
+	var rankingStore *ranking.Store
+	if rankingEnabled {
+		rankingStore = ranking.NewStore(*dataDir, ranking.DefaultMaxAge)
+		if err := rankingStore.Load(); err != nil {
+			log.Printf("ranking store load warning: %v", err)
+		}
+
+		sampler := ranking.NewSampler(tickerStore, rankingStore)
+		go sampler.Run(ctx)
+
+		// Persist ranking data periodically
+		go func() {
+			ticker := time.NewTicker(5 * time.Minute)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					// Final persist on shutdown
+					if err := rankingStore.Persist(); err != nil {
+						log.Printf("ranking store final persist error: %v", err)
+					}
+					return
+				case <-ticker.C:
+					if err := rankingStore.Persist(); err != nil {
+						log.Printf("ranking store persist error: %v", err)
+					}
+				}
+			}
+		}()
+
+		log.Printf("ranking monitor enabled: sample_interval=5m retention=24h")
+	}
+
 	api := httpapi.New(signalBroker, history, httpapi.ParseAllowedOrigins(*corsOrigins))
 	api.PivotStatus = refresher
 	api.PivotStore = store
@@ -153,6 +189,7 @@ func main() {
 	api.PatternHistory = patternHistory
 	api.KlineStore = klineStore
 	api.SignalCombiner = signalCombiner
+	api.RankingStore = rankingStore
 
 	srv := &http.Server{
 		Addr:              *addr,

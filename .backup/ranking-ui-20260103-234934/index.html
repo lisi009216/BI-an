@@ -6,14 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="枢轴监控" />
+    <meta name="apple-mobile-web-app-title" content="Pivot Monitor" />
     <meta name="theme-color" content="#181A20" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png" />
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
-    <title>枢轴监控</title>
+    <title>Pivot Monitor</title>
     <!-- Clusterize.js for virtual scrolling -->
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/clusterize.js/0.19.0/clusterize.min.css" />
     <style>
@@ -122,15 +122,6 @@
         .header-search:focus {
             outline: none;
             border-color: var(--yellow)
-        }
-
-        .header-lang {
-            padding: 6px 8px;
-            font-size: 11px;
-            background: var(--vessel);
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            color: var(--text)
         }
 
         /* Header sound toggle */
@@ -1203,42 +1194,38 @@
     <!-- 固定头部 -->
     <div class="header-area">
         <header>
-            <div class="title" data-i18n="app_title">枢轴监控</div>
-            <input id="symbol" type="text" class="header-search" placeholder="币种" data-i18n-placeholder="placeholder_symbol" />
-            <select id="langSelect" class="header-lang">
-                <option value="zh" data-i18n="lang_zh">中文</option>
-                <option value="en" data-i18n="lang_en">英文</option>
-            </select>
-            <div class="runtime-stats" id="runtimeStats" title="点击刷新" data-i18n-title="title_click_refresh">
+            <div class="title">Pivot Monitor</div>
+            <input id="symbol" type="text" class="header-search" placeholder="Symbol" />
+            <div class="runtime-stats" id="runtimeStats" title="Click to refresh">
                 <span class="stat"><span class="stat-label">G</span><span id="rtGoroutines">-</span></span>
                 <span class="stat"><span class="stat-label">K</span><span id="rtKlines">-</span></span>
                 <span class="stat"><span class="stat-label">S</span><span id="rtSignals">-</span></span>
                 <span class="stat"><span class="stat-label">M</span><span id="rtHeap">-</span></span>
             </div>
-            <label class="header-sound-toggle" title="声音提醒" data-i18n-title="title_sound_alert">
+            <label class="header-sound-toggle" title="Sound Alert">
                 <input type="checkbox" id="soundEnabled" checked />
                 <span class="sound-icon">🔔</span>
             </label>
-            <span id="status" class="pill" data-i18n="status_disconnected">未连接</span>
-            <button id="refresh" type="button" data-i18n="btn_refresh">刷新</button>
+            <span id="status" class="pill">disconnected</span>
+            <button id="refresh" type="button">Refresh</button>
         </header>
         <div class="pivot-status">
             <div class="row">
-                <div><strong data-i18n="label_daily">日</strong>: <span id="dailyStatus">-</span></div>
-                <div><strong data-i18n="label_weekly">周</strong>: <span id="weeklyStatus">-</span></div>
+                <div><strong>Daily:</strong> <span id="dailyStatus">-</span></div>
+                <div><strong>Weekly:</strong> <span id="weeklyStatus">-</span></div>
             </div>
         </div>
         <div class="controls">
             <div class="row">
                 <select id="period">
-                    <option value="" data-i18n="option_all">全部</option>
+                    <option value="">All</option>
                     <option value="1d">1d</option>
                     <option value="1w">1w</option>
                 </select>
                 <select id="direction">
-                    <option value="" data-i18n="option_all">全部</option>
-                    <option value="up" data-i18n="option_up">上涨</option>
-                    <option value="down" data-i18n="option_down">下跌</option>
+                    <option value="">All</option>
+                    <option value="up">up</option>
+                    <option value="down">down</option>
                 </select>
                 <select id="limit">
                     <option value="500">500</option>
@@ -1247,9 +1234,9 @@
                     <option value="5000">5000</option>
                     <option value="10000">10000</option>
                 </select>
-                <input id="minDiff" type="number" class="input-sm" placeholder="差值%" data-i18n-placeholder="placeholder_diff" min="0" step="0.1" />
+                <input id="minDiff" type="number" class="input-sm" placeholder="Diff%" min="0" step="0.1" />
                 <div class="volume-filter">
-                    <input id="minVolume" type="number" class="input-sm" placeholder="成交额" data-i18n-placeholder="placeholder_vol" min="0" step="1" />
+                    <input id="minVolume" type="number" class="input-sm" placeholder="Vol" min="0" step="1" />
                     <select id="volumeUnit" class="select-sm">
                         <option value="M" selected>M</option>
                         <option value="K">K</option>
@@ -1258,7 +1245,7 @@
                 </div>
             </div>
             <div class="row">
-                <span style="font-size:11px;color:var(--text-secondary)" data-i18n="label_levels">点位</span>
+                <span style="font-size:11px;color:var(--text-secondary)">Levels:</span>
                 <div class="level-btns" id="filterLevels">
                     <button type="button" data-level="PP">PP</button>
                     <button type="button" data-level="R1">R1</button>
@@ -1274,7 +1261,7 @@
                 </div>
             </div>
             <div class="row">
-                <span style="font-size:11px;color:var(--text-secondary)" data-i18n="label_sound">提示音</span>
+                <span style="font-size:11px;color:var(--text-secondary)">Sound:</span>
                 <div class="level-btns" id="soundLevels">
                     <button type="button" data-level="PP">PP</button>
                     <button type="button" data-level="R1">R1</button>
@@ -1292,18 +1279,18 @@
         </div>
         <div class="row" style="margin-top:6px;justify-content:space-between">
             <div class="tabs">
-                <button class="tab active" data-view="signals" data-i18n="tab_signals">信号</button>
-                <button class="tab" data-view="patterns" data-i18n="tab_patterns">形态</button>
-                <button class="tab" data-view="volume" data-i18n="tab_volume">成交额</button>
-                <button class="tab" data-view="trades" data-i18n="tab_trades">成交笔数</button>
+                <button class="tab active" data-view="signals">Signals</button>
+                <button class="tab" data-view="patterns">Patterns</button>
+                <button class="tab" data-view="volume">Volume</button>
+                <button class="tab" data-view="trades">Trades</button>
             </div>
-            <div id="hint" class="hint" data-i18n="hint_signals">信号: -/-</div>
+            <div id="hint" class="hint">Signals: -/-</div>
         </div>
         <!-- Pattern filters (hidden by default) -->
         <div id="patternFilters" class="row" style="margin-top:6px;display:none">
             <select id="patternType">
-                <option value="" data-i18n="pattern_all">全部形态</option>
-                <optgroup label="高效率 (A/B)" data-i18n-label="pattern_efficiency_high">
+                <option value="">All Patterns</option>
+                <optgroup label="High Efficiency (A/B)">
                     <option value="engulfing">吞没形态 (67%)</option>
                     <option value="morning_star">晨星 (70%)</option>
                     <option value="evening_star">暮星 (72%)</option>
@@ -1312,49 +1299,47 @@
                     <option value="hammer">锤子线 (60%)</option>
                     <option value="shooting_star">流星线 (62%)</option>
                 </optgroup>
-                <optgroup label="中效率 (C/D)" data-i18n-label="pattern_efficiency_medium">
+                <optgroup label="Medium Efficiency (C/D)">
                     <option value="three_white">三白兵 (82%)</option>
                     <option value="harami">孕线 (53%)</option>
                     <option value="doji">十字星 (57%)</option>
                 </optgroup>
             </select>
             <select id="efficiencyRank">
-                <option value="" data-i18n="pattern_rank_all">全部等级</option>
-                <option value="A" data-i18n="pattern_rank_a">A (最高)</option>
-                <option value="B" data-i18n="pattern_rank_b">B (较高)</option>
-                <option value="C" data-i18n="pattern_rank_c">C (中等)</option>
-                <option value="D" data-i18n="pattern_rank_d">D (较低)</option>
+                <option value="">All Ranks</option>
+                <option value="A">A (Highest)</option>
+                <option value="B">B (High)</option>
+                <option value="C">C (Medium)</option>
+                <option value="D">D (Low)</option>
             </select>
             <select id="patternDirection">
-                <option value="" data-i18n="pattern_direction_all">全部方向</option>
-                <option value="bullish" data-i18n="pattern_direction_bullish">看涨 ↑</option>
-                <option value="bearish" data-i18n="pattern_direction_bearish">看跌 ↓</option>
+                <option value="">All Directions</option>
+                <option value="bullish">Bullish ↑</option>
+                <option value="bearish">Bearish ↓</option>
             </select>
         </div>
         <!-- Ranking filters (hidden by default) -->
         <div id="rankingFilters" class="row" style="margin-top:6px;display:none">
-            <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_compare">对比</span>
+            <span style="font-size:11px;color:var(--text-secondary)">Compare:</span>
             <select id="rankingCompare">
-                <option value="" data-i18n="ranking_prev">上一快照</option>
-                <option value="5m" data-i18n="ranking_5m">5分钟</option>
-                <option value="15m" data-i18n="ranking_15m">15分钟</option>
-                <option value="30m" data-i18n="ranking_30m">30分钟</option>
-                <option value="1h" data-i18n="ranking_1h">1小时</option>
-                <option value="6h" data-i18n="ranking_6h">6小时</option>
-                <option value="24h" data-i18n="ranking_24h">24小时</option>
+                <option value="">Previous</option>
+                <option value="5m">5 min</option>
+                <option value="15m">15 min</option>
+                <option value="30m">30 min</option>
+                <option value="1h">1 hour</option>
+                <option value="6h">6 hours</option>
+                <option value="24h">24 hours</option>
             </select>
-            <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_sort">排序</span>
+            <span style="font-size:11px;color:var(--text-secondary)">Sort:</span>
             <select id="rankingSort">
-                <option value="default" data-i18n="ranking_sort_default">默认</option>
-                <option value="rank" data-i18n="ranking_sort_rank">排名</option>
-                <option value="growth" data-i18n="ranking_sort_growth">增长%</option>
+                <option value="rank">Rank</option>
+                <option value="growth">Growth %</option>
             </select>
-            <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_sort_order">顺序</span>
             <select id="rankingSortOrder">
-                <option value="asc" data-i18n="ranking_order_asc">正序</option>
-                <option value="desc" data-i18n="ranking_order_desc">倒序</option>
+                <option value="asc">Asc</option>
+                <option value="desc">Desc</option>
             </select>
-            <button id="rankingRefresh" type="button" data-i18n="btn_refresh">刷新</button>
+            <button id="rankingRefresh" type="button">Refresh</button>
         </div>
     </div>
     <!-- 滚动列表区域 -->
@@ -1381,67 +1366,67 @@
             </div>
             <div class="modal-body">
                 <div class="stat-row">
-                    <span class="label" data-i18n="modal_direction">方向</span>
+                    <span class="label">Direction</span>
                     <span id="modalDirection" class="value"></span>
                 </div>
                 <div class="stat-row">
-                    <span class="label" data-i18n="modal_up_prob">上涨概率</span>
+                    <span class="label">Up Probability</span>
                     <span id="modalUpPct" class="value"></span>
                     <div class="bar">
                         <div id="modalUpBar" class="fill up"></div>
                     </div>
                 </div>
                 <div class="stat-row">
-                    <span class="label" data-i18n="modal_down_prob">下跌概率</span>
+                    <span class="label">Down Probability</span>
                     <span id="modalDownPct" class="value"></span>
                     <div class="bar">
                         <div id="modalDownBar" class="fill down"></div>
                     </div>
                 </div>
                 <div class="stat-row">
-                    <span class="label" data-i18n="modal_efficiency">效率等级</span>
+                    <span class="label">Efficiency Rank</span>
                     <span id="modalEfficiency" class="value"></span>
                 </div>
                 <div class="stat-row">
-                    <span class="label" data-i18n="modal_confidence">置信度</span>
+                    <span class="label">Confidence</span>
                     <span id="modalConfidence" class="value"></span>
                 </div>
                 <div class="stat-row">
-                    <span class="label" data-i18n="modal_source">来源</span>
+                    <span class="label">Source</span>
                     <span id="modalSource" class="value"></span>
                 </div>
                 <div class="stat-row">
-                    <span class="label" data-i18n="modal_detected">发现时间</span>
+                    <span class="label">Detected At</span>
                     <span id="modalDetectedAt" class="value"></span>
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="modalTradeBtn" class="btn-trade" data-i18n="btn_trade">交易</button>
-                <button id="modalFilterBtn" class="btn-filter" data-i18n="btn_filter">筛选</button>
+                <button id="modalTradeBtn" class="btn-trade">Trade</button>
+                <button id="modalFilterBtn" class="btn-filter">Filter</button>
             </div>
         </div>
     </div>
     <!-- 操作菜单 -->
     <div id="actionMenu" class="action-menu">
-        <div class="action-menu-item" data-action="trade" data-i18n="action_jump_trade">🚀 跳转交易</div>
-        <div class="action-menu-item" data-action="pivots" data-i18n="action_pivot_levels">📊 枢轴点位</div>
-        <div class="action-menu-item" data-action="copy" data-i18n="action_copy_symbol">📋 复制币种</div>
-        <div class="action-menu-item" data-action="filter" data-i18n="action_filter_symbol">🔍 筛选币种</div>
-        <div class="action-menu-item" data-action="signals" style="display:none" data-i18n="action_show_signals">📊 查看信号</div>
+        <div class="action-menu-item" data-action="trade">🚀 Jump to Trade</div>
+        <div class="action-menu-item" data-action="pivots">📊 Pivot Levels</div>
+        <div class="action-menu-item" data-action="copy">📋 Copy Symbol</div>
+        <div class="action-menu-item" data-action="filter">🔍 Filter Symbol</div>
+        <div class="action-menu-item" data-action="signals" style="display:none">📊 Show Signals</div>
     </div>
     <!-- Pivot Preview Modal -->
     <div id="pivotModal" class="pattern-modal" style="display:none">
         <div class="pattern-modal-content" style="width:280px">
             <div class="modal-header">
                 <span id="pivotModalSymbol" class="symbol"></span>
-                <span class="pattern-name" data-i18n="pivot_levels_title">枢轴点位</span>
+                <span class="pattern-name">Pivot Levels</span>
                 <button class="close-btn" onclick="hidePivotModal()">&times;</button>
             </div>
             <div class="modal-body" style="padding:8px 12px">
                 <div class="pivot-period-toggle">
                     <button class="pivot-period-btn active" data-period="1d"
-                        onclick="switchPivotPeriod('1d')" data-i18n="pivot_period_day">日线</button>
-                    <button class="pivot-period-btn" data-period="1w" onclick="switchPivotPeriod('1w')" data-i18n="pivot_period_week">周线</button>
+                        onclick="switchPivotPeriod('1d')">日线</button>
+                    <button class="pivot-period-btn" data-period="1w" onclick="switchPivotPeriod('1w')">周线</button>
                 </div>
                 <div id="pivotLevelsList" class="pivot-levels-list"></div>
             </div>
@@ -1452,27 +1437,27 @@
         <div class="pattern-modal-content" style="width:340px;max-height:80vh">
             <div class="modal-header">
                 <span id="rankingModalSymbol" class="symbol"></span>
-                <span class="pattern-name" data-i18n="ranking_history_title">排名历史</span>
+                <span class="pattern-name">Ranking History</span>
                 <button class="close-btn" onclick="hideRankingModal()">&times;</button>
             </div>
             <div class="modal-body" style="padding:12px;overflow-y:auto;max-height:60vh">
                 <div id="rankingModalCurrent" class="ranking-modal-current"></div>
                 <div class="ranking-chart-section">
-                    <div class="chart-title" data-i18n="chart_volume_rank">成交额排名（24h）</div>
+                    <div class="chart-title">Volume Rank (24h)</div>
                     <canvas id="rankingChartVolume" width="300" height="80"></canvas>
                 </div>
                 <div class="ranking-chart-section">
-                    <div class="chart-title" data-i18n="chart_trades_rank">成交笔数排名（24h）</div>
+                    <div class="chart-title">Trades Rank (24h)</div>
                     <canvas id="rankingChartTrades" width="300" height="80"></canvas>
                 </div>
                 <div class="ranking-chart-section">
-                    <div class="chart-title" data-i18n="chart_price_change">价格变化（24h）</div>
+                    <div class="chart-title">Price Change (24h)</div>
                     <canvas id="rankingChartPrice" width="300" height="80"></canvas>
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="rankingModalTradeBtn" class="btn-trade" data-i18n="btn_trade">交易</button>
-                <button id="rankingModalFilterBtn" class="btn-filter" data-i18n="btn_filter">筛选</button>
+                <button id="rankingModalTradeBtn" class="btn-trade">Trade</button>
+                <button id="rankingModalFilterBtn" class="btn-filter">Filter</button>
             </div>
         </div>
     </div>
@@ -1482,29 +1467,29 @@
     <div class="footer-stats" id="footerStats">
         <div class="stat-group">
             <div class="stat-item">
-                <span class="stat-label" data-i18n="footer_sse">SSE</span>:
+                <span class="stat-label">SSE:</span>
                 <span class="stat-value" id="ftSSE">-</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label" data-i18n="footer_goroutines">协程</span>:
+                <span class="stat-label">Goroutines:</span>
                 <span class="stat-value" id="ftGoroutines">-</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label" data-i18n="footer_heap">堆内存</span>:
+                <span class="stat-label">Heap:</span>
                 <span class="stat-value" id="ftHeap">-</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label" data-i18n="footer_symbols">币种</span>:
+                <span class="stat-label">Symbols:</span>
                 <span class="stat-value" id="ftSymbols">-</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label" data-i18n="footer_signals">信号</span>:
+                <span class="stat-label">Signals:</span>
                 <span class="stat-value" id="ftSignals">-</span>
             </div>
         </div>
         <div class="stat-group">
             <div class="stat-item">
-                <span class="stat-label" data-i18n="footer_uptime">运行时长</span>:
+                <span class="stat-label">Uptime:</span>
                 <span class="stat-value" id="ftUptime">-</span>
             </div>
             <div class="stat-item version" id="ftVersion">-</div>

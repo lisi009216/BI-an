@@ -14,6 +14,7 @@ import (
 	"example.com/binance-pivot-monitor/internal/kline"
 	"example.com/binance-pivot-monitor/internal/pattern"
 	"example.com/binance-pivot-monitor/internal/pivot"
+	"example.com/binance-pivot-monitor/internal/ranking"
 	signalpkg "example.com/binance-pivot-monitor/internal/signal"
 	"example.com/binance-pivot-monitor/internal/sse"
 	"example.com/binance-pivot-monitor/internal/ticker"
@@ -32,10 +33,13 @@ type Server struct {
 	TickerMonitor  *ticker.Monitor
 
 	// Pattern recognition
-	PatternBroker   *sse.Broker[pattern.Signal]
-	PatternHistory  *pattern.History
-	KlineStore      *kline.Store
-	SignalCombiner  *signalpkg.Combiner
+	PatternBroker  *sse.Broker[pattern.Signal]
+	PatternHistory *pattern.History
+	KlineStore     *kline.Store
+	SignalCombiner *signalpkg.Combiner
+
+	// Ranking monitor
+	RankingStore *ranking.Store
 }
 
 func New(signalBroker *sse.Broker[signalpkg.Signal], history *signalpkg.History, allowedOrigins []string) *Server {
@@ -59,6 +63,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/klines", s.handleKlines)
 	mux.HandleFunc("/api/klines/stats", s.handleKlineStats)
 	mux.HandleFunc("/api/runtime", s.handleRuntime)
+
+	// Ranking API
+	mux.HandleFunc("/api/ranking/current", s.handleRankingCurrent)
+	mux.HandleFunc("/api/ranking/history/", s.handleRankingHistory)
+	mux.HandleFunc("/api/ranking/movers", s.handleRankingMovers)
 
 	// 嵌入的静态文件（包括图标）
 	staticContent, _ := fs.Sub(staticFS, "static")

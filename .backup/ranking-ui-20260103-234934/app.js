@@ -4,350 +4,19 @@
 
     const $ = id => document.getElementById(id);
 
-    const LANG_KEY = "pivot_lang";
-    const I18N = {
-        zh: {
-            app_title: "枢轴监控",
-            placeholder_symbol: "币种",
-            title_click_refresh: "点击刷新",
-            title_sound_alert: "声音提醒",
-            lang_zh: "中文",
-            lang_en: "英文",
-            status_connected: "已连接",
-            status_reconnecting: "连接中",
-            status_disconnected: "未连接",
-            status_unknown: "未知",
-            btn_refresh: "刷新",
-            label_daily: "日",
-            label_weekly: "周",
-            pivot_period_day: "日线",
-            pivot_period_week: "周线",
-            option_all: "全部",
-            option_up: "上涨",
-            option_down: "下跌",
-            placeholder_diff: "差值%",
-            placeholder_vol: "成交额",
-            label_levels: "点位",
-            label_sound: "提示音",
-            tab_signals: "信号",
-            tab_patterns: "形态",
-            tab_volume: "成交额",
-            tab_trades: "成交笔数",
-            hint_signals: "信号: {filtered}/{total}",
-            hint_patterns: "形态: {filtered}/{total}",
-            hint_loading: "加载中...",
-            hint_load_failed: "加载失败: {error}",
-            pattern_all: "全部形态",
-            pattern_efficiency_high: "高效率 (A/B)",
-            pattern_efficiency_medium: "中效率 (C/D)",
-            pattern_rank_all: "全部等级",
-            pattern_rank_a: "A (最高)",
-            pattern_rank_b: "B (较高)",
-            pattern_rank_c: "C (中等)",
-            pattern_rank_d: "D (较低)",
-            pattern_direction_all: "全部方向",
-            pattern_direction_bullish: "看涨 ↑",
-            pattern_direction_bearish: "看跌 ↓",
-            pattern_count: "共{count}个形态",
-            ranking_compare: "对比",
-            ranking_sort: "排序",
-            ranking_sort_order: "顺序",
-            ranking_prev: "上一快照",
-            ranking_5m: "5分钟",
-            ranking_15m: "15分钟",
-            ranking_30m: "30分钟",
-            ranking_1h: "1小时",
-            ranking_6h: "6小时",
-            ranking_24h: "24小时",
-            ranking_sort_default: "默认",
-            ranking_sort_rank: "排名",
-            ranking_sort_growth: "增长%",
-            ranking_order_asc: "正序",
-            ranking_order_desc: "倒序",
-            modal_direction: "方向",
-            modal_up_prob: "上涨概率",
-            modal_down_prob: "下跌概率",
-            modal_efficiency: "效率等级",
-            modal_confidence: "置信度",
-            modal_source: "来源",
-            modal_detected: "发现时间",
-            btn_trade: "交易",
-            btn_filter: "筛选",
-            action_jump_trade: "🚀 跳转交易",
-            action_pivot_levels: "📊 枢轴点位",
-            action_copy_symbol: "📋 复制币种",
-            action_filter_symbol: "🔍 筛选币种",
-            action_show_signals: "📊 查看信号",
-            pivot_levels_title: "枢轴点位",
-            ranking_history_title: "排名历史",
-            chart_volume_rank: "成交额排名（24h）",
-            chart_trades_rank: "成交笔数排名（24h）",
-            chart_price_change: "价格变化（24h）",
-            footer_sse: "SSE",
-            footer_goroutines: "协程",
-            footer_heap: "堆内存",
-            footer_symbols: "币种",
-            footer_signals: "信号",
-            footer_uptime: "运行时长",
-            no_signals: "暂无信号",
-            no_patterns: "暂无形态",
-            no_ranking: "暂无排名数据",
-            time_just_now: "刚刚",
-            time_seconds_ago: "{s}秒前",
-            time_minutes_ago: "{m}分钟前",
-            time_hours_minutes_ago: "{h}小时{m}分钟前",
-            time_days_hours_ago: "{d}天{h}小时前",
-            time_now: "刚刚",
-            time_hm: "{h}小时{m}分钟",
-            time_minutes: "{m}分钟",
-            time_in_minutes: "{m}分钟后",
-            period_day_short: "日",
-            period_week_short: "周",
-            label_volume_rank: "成交额排名",
-            label_trades_rank: "成交笔数排名",
-            label_price: "价格",
-            label_volume: "成交额",
-            label_trade_count: "成交笔数",
-            label_rank: "等级",
-            label_source_unknown: "未知",
-            label_custom: "自定义",
-            label_neutral: "中性",
-            label_bullish: "看涨",
-            label_bearish: "看跌",
-            label_new: "新",
-            label_trades_unit: "笔成交",
-            label_current_price: "当前价格",
-            label_symbols: "{count} 个币种",
-            status_stale: "过期",
-            status_ok: "正常",
-            toast_copied: "已复制: {symbol}",
-            toast_copy_failed: "复制失败",
-            toast_filtered: "已筛选: {symbol}",
-            toast_filter_cleared: "已清除筛选",
-            toast_showing_signals: "已显示 {symbol} 的信号",
-            toast_no_pivot: "无枢轴数据: {symbol}",
-            toast_no_data: "暂无数据",
-            text_loading: "加载中...",
-            text_no_history: "暂无历史数据",
-            text_not_enough_data: "数据不足",
-            error_http: "请求失败: {status}",
-            hint_ranking: "{type}: {count} 项（对比 {time}）",
-            hint_ranking_simple: "{type}: {count} 项",
-            type_volume: "成交额",
-            type_trades: "成交笔数",
-            label_signal: "信号"
-        },
-        en: {
-            app_title: "Pivot Monitor",
-            placeholder_symbol: "Symbol",
-            title_click_refresh: "Click to refresh",
-            title_sound_alert: "Sound Alert",
-            lang_zh: "Chinese",
-            lang_en: "English",
-            status_connected: "connected",
-            status_reconnecting: "reconnecting",
-            status_disconnected: "disconnected",
-            status_unknown: "unknown",
-            btn_refresh: "Refresh",
-            label_daily: "Daily",
-            label_weekly: "Weekly",
-            pivot_period_day: "Daily",
-            pivot_period_week: "Weekly",
-            option_all: "All",
-            option_up: "up",
-            option_down: "down",
-            placeholder_diff: "Diff%",
-            placeholder_vol: "Vol",
-            label_levels: "Levels",
-            label_sound: "Sound",
-            tab_signals: "Signals",
-            tab_patterns: "Patterns",
-            tab_volume: "Volume",
-            tab_trades: "Trades",
-            hint_signals: "Signals: {filtered}/{total}",
-            hint_patterns: "Patterns: {filtered}/{total}",
-            hint_loading: "Loading...",
-            hint_load_failed: "Load failed: {error}",
-            pattern_all: "All Patterns",
-            pattern_efficiency_high: "High Efficiency (A/B)",
-            pattern_efficiency_medium: "Medium Efficiency (C/D)",
-            pattern_rank_all: "All Ranks",
-            pattern_rank_a: "A (Highest)",
-            pattern_rank_b: "B (High)",
-            pattern_rank_c: "C (Medium)",
-            pattern_rank_d: "D (Low)",
-            pattern_direction_all: "All Directions",
-            pattern_direction_bullish: "Bullish ↑",
-            pattern_direction_bearish: "Bearish ↓",
-            pattern_count: "{count} patterns",
-            ranking_compare: "Compare",
-            ranking_sort: "Sort",
-            ranking_sort_order: "Order",
-            ranking_prev: "Previous",
-            ranking_5m: "5 min",
-            ranking_15m: "15 min",
-            ranking_30m: "30 min",
-            ranking_1h: "1 hour",
-            ranking_6h: "6 hours",
-            ranking_24h: "24 hours",
-            ranking_sort_default: "Default",
-            ranking_sort_rank: "Rank",
-            ranking_sort_growth: "Growth %",
-            ranking_order_asc: "Asc",
-            ranking_order_desc: "Desc",
-            modal_direction: "Direction",
-            modal_up_prob: "Up Probability",
-            modal_down_prob: "Down Probability",
-            modal_efficiency: "Efficiency Rank",
-            modal_confidence: "Confidence",
-            modal_source: "Source",
-            modal_detected: "Detected At",
-            btn_trade: "Trade",
-            btn_filter: "Filter",
-            action_jump_trade: "🚀 Jump to Trade",
-            action_pivot_levels: "📊 Pivot Levels",
-            action_copy_symbol: "📋 Copy Symbol",
-            action_filter_symbol: "🔍 Filter Symbol",
-            action_show_signals: "📊 Show Signals",
-            pivot_levels_title: "Pivot Levels",
-            ranking_history_title: "Ranking History",
-            chart_volume_rank: "Volume Rank (24h)",
-            chart_trades_rank: "Trades Rank (24h)",
-            chart_price_change: "Price Change (24h)",
-            footer_sse: "SSE",
-            footer_goroutines: "Goroutines",
-            footer_heap: "Heap",
-            footer_symbols: "Symbols",
-            footer_signals: "Signals",
-            footer_uptime: "Uptime",
-            no_signals: "No signals",
-            no_patterns: "No patterns",
-            no_ranking: "No ranking data",
-            time_just_now: "just now",
-            time_seconds_ago: "{s}s ago",
-            time_minutes_ago: "{m}m ago",
-            time_hours_minutes_ago: "{h}h {m}m ago",
-            time_days_hours_ago: "{d}d {h}h ago",
-            time_now: "now",
-            time_hm: "{h}h {m}m",
-            time_minutes: "{m}m",
-            time_in_minutes: "in {m}m",
-            period_day_short: "D",
-            period_week_short: "W",
-            label_volume_rank: "Volume Rank",
-            label_trades_rank: "Trades Rank",
-            label_price: "Price",
-            label_volume: "Volume",
-            label_trade_count: "Trade Count",
-            label_rank: "Rank",
-            label_source_unknown: "unknown",
-            label_custom: "Custom",
-            label_neutral: "Neutral",
-            label_bullish: "Bullish",
-            label_bearish: "Bearish",
-            label_new: "NEW",
-            label_trades_unit: "trades",
-            label_current_price: "Current Price",
-            label_symbols: "{count} symbols",
-            status_stale: "STALE",
-            status_ok: "OK",
-            toast_copied: "Copied: {symbol}",
-            toast_copy_failed: "Copy failed",
-            toast_filtered: "Filtered: {symbol}",
-            toast_filter_cleared: "Filter cleared",
-            toast_showing_signals: "Showing signals for {symbol}",
-            toast_no_pivot: "No pivot data for {symbol}",
-            toast_no_data: "No data",
-            text_loading: "Loading...",
-            text_no_history: "No history data",
-            text_not_enough_data: "Not enough data",
-            error_http: "Request failed: {status}",
-            hint_ranking: "{type}: {count} items (vs {time})",
-            hint_ranking_simple: "{type}: {count} items",
-            type_volume: "Volume",
-            type_trades: "Trades",
-            label_signal: "Signal"
-        }
-    };
-
-    let currentLang = (localStorage.getItem(LANG_KEY) ||
-        (navigator.language && navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en"));
-
-    function t(key, vars) {
-        const table = I18N[currentLang] || I18N.zh;
-        let text = table[key] || I18N.zh[key] || key;
-        if (vars) {
-            for (const [name, value] of Object.entries(vars)) {
-                text = text.replace(new RegExp(`\\{${name}\\}`, "g"), String(value));
-            }
-        }
-        return text;
-    }
-
-    function applyI18n() {
-        document.documentElement.lang = currentLang === "zh" ? "zh-CN" : "en";
-        document.querySelectorAll("[data-i18n]").forEach(el => {
-            el.textContent = t(el.dataset.i18n);
-        });
-        document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
-            el.setAttribute("placeholder", t(el.dataset.i18nPlaceholder));
-        });
-        document.querySelectorAll("[data-i18n-title]").forEach(el => {
-            el.setAttribute("title", t(el.dataset.i18nTitle));
-        });
-        document.querySelectorAll("[data-i18n-label]").forEach(el => {
-            el.setAttribute("label", t(el.dataset.i18nLabel));
-        });
-
-        const title = t("app_title");
-        document.title = title;
-        const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-        if (appleTitle) {
-            appleTitle.setAttribute("content", title);
-        }
-
-        const langSelect = $("langSelect");
-        if (langSelect) {
-            langSelect.value = currentLang;
-        }
-
-        if (signalCluster) signalCluster.options.no_data_text = t("no_signals");
-        if (patternCluster) patternCluster.options.no_data_text = t("no_patterns");
-        if (rankingCluster) rankingCluster.options.no_data_text = t("no_ranking");
-
-        if ($("status")) {
-            setStatus(currentStatus);
-        }
-    }
-
-    function setLanguage(lang) {
-        if (!I18N[lang]) return;
-        currentLang = lang;
-        localStorage.setItem(LANG_KEY, lang);
-        applyI18n();
-        updateHint();
-        updateView();
-    }
-
     // ==================== 格式化函数 ====================
     const fmtRelTime = v => {
         try {
             const d = new Date(v);
             if (isNaN(d)) return String(v);
             const now = Date.now(), diff = Math.floor((now - d.getTime()) / 1000);
-            if (diff < 0) return t("time_just_now");
-            if (diff < 60) return t("time_seconds_ago", { s: diff });
-            if (diff < 3600) return t("time_minutes_ago", { m: Math.floor(diff / 60) });
-            if (diff < 86400) {
-                return t("time_hours_minutes_ago", {
-                    h: Math.floor(diff / 3600),
-                    m: Math.floor((diff % 3600) / 60)
-                });
-            }
-            return t("time_days_hours_ago", {
-                d: Math.floor(diff / 86400),
-                h: Math.floor((diff % 86400) / 3600)
-            });
+            if (diff < 0) return "just now";
+            if (diff < 60) return diff + "s ago";
+            if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+            if (diff < 86400) return Math.floor(diff / 3600) + "h " + Math.floor((diff % 3600) / 60) + "m ago";
+            const days = Math.floor(diff / 86400);
+            const hours = Math.floor((diff % 86400) / 3600);
+            return days + "d " + hours + "h ago";
         } catch (_) { return String(v); }
     };
 
@@ -381,9 +50,9 @@
     };
 
     const fmtDur = s => {
-        if (s < 0) return t("time_now");
+        if (s < 0) return "now";
         const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-        return h > 0 ? t("time_hm", { h, m }) : t("time_minutes", { m });
+        return h > 0 ? h + "h " + m + "m" : m + "m";
     };
 
     // 效率等级颜色
@@ -412,8 +81,7 @@
         try {
             const d = new Date(v);
             if (isNaN(d)) return String(v);
-            const locale = currentLang === "zh" ? "zh-CN" : "en-US";
-            return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         } catch (_) { return String(v); }
     };
 
@@ -428,7 +96,7 @@
     // Ranking monitor data (from backend API)
     let rankingData = { volume: [], trades: [] };
     let rankingCompare = ''; // Compare duration: '', '5m', '15m', '30m', '1h', '6h', '24h'
-    let rankingSort = 'default'; // 'default', 'rank' or 'growth'
+    let rankingSort = 'rank'; // 'rank' or 'growth'
     let rankingSortOrder = 'asc'; // 'asc' or 'desc'
 
     // 枢轴点缓存 (5分钟过期)
@@ -463,15 +131,9 @@
     };
 
     // ==================== 工具函数 ====================
-    let currentStatus = "disconnected";
     const setStatus = s => {
         const e = $("status");
-        currentStatus = s || "disconnected";
-        const label = s === "connected" ? t("status_connected") :
-            s === "reconnecting" ? t("status_reconnecting") :
-                s === "disconnected" ? t("status_disconnected") :
-                    t("status_unknown");
-        e.textContent = label;
+        e.textContent = s || "unknown";
         e.classList.remove("connected", "reconnecting", "disconnected");
         if (s) e.classList.add(s);
     };
@@ -619,15 +281,9 @@
 
     function updateHint() {
         if (currentView === 'patterns') {
-            $("hint").textContent = t("hint_patterns", {
-                filtered: filteredPatterns.length,
-                total: masterPatterns.length
-            });
+            $("hint").textContent = `Patterns: ${filteredPatterns.length}/${masterPatterns.length}`;
         } else {
-            $("hint").textContent = t("hint_signals", {
-                filtered: filteredSignals.length,
-                total: masterSignals.length
-            });
+            $("hint").textContent = `Signals: ${filteredSignals.length}/${masterSignals.length}`;
         }
     }
 
@@ -707,18 +363,6 @@
     }
 
     // ==================== 渲染函数 ====================
-    function directionLabel(direction) {
-        const dir = String(direction || "").toLowerCase();
-        if (dir === "bullish" || dir === "up") return t("label_bullish");
-        if (dir === "bearish" || dir === "down") return t("label_bearish");
-        if (dir === "neutral") return t("label_neutral");
-        return direction || "-";
-    }
-
-    function rankingTypeLabel(type) {
-        return type === "trades" ? t("type_trades") : t("type_volume");
-    }
-
     function renderSignalItem(signal, index) {
         const ticker = tickerData.get(signal.symbol);
         const volRank = symbolRanking.volume.get(signal.symbol);
@@ -727,8 +371,8 @@
         // 排行徽章
         let rankHtml = '';
         if (volRank || tradeRank) {
-            const vr = volRank ? `<span class="rank-badge vol" title="${t("label_volume_rank")}">#${volRank}V</span>` : '';
-            const tr = tradeRank ? `<span class="rank-badge trd" title="${t("label_trades_rank")}">#${tradeRank}T</span>` : '';
+            const vr = volRank ? `<span class="rank-badge vol" title="Volume Rank">#${volRank}V</span>` : '';
+            const tr = tradeRank ? `<span class="rank-badge trd" title="Trades Rank">#${tradeRank}T</span>` : '';
             rankHtml = `<div class="ranks">${vr}${tr}</div>`;
         }
 
@@ -754,7 +398,7 @@
                     <span class="price-now">${fmtPrice(ticker.last_price)}</span>
                     <span class="price-pct ${pctClass}">${fmtPct(ticker.price_percent)}</span>
                     <span class="volume">${fmtVolume(ticker.quote_volume)}</span>
-                    <span class="trades">${fmtTradeCount(ticker.trade_count)} ${t("label_trades_unit")}</span>
+                    <span class="trades">${fmtTradeCount(ticker.trade_count)} trades</span>
                 </div>
             `;
         }
@@ -766,12 +410,12 @@
                     <div class="tags">
                         <span class="tag">${signal.period}</span>
                         <span class="tag">${signal.level}</span>
-                        <span class="tag ${signal.direction}">${directionLabel(signal.direction)}</span>
+                        <span class="tag ${signal.direction}">${signal.direction}</span>
                         ${patternBadgeHtml}
                     </div>
                 </div>
                 <div class="sub">
-                    <div>${t("label_signal")}: ${fmtPrice(signal.price)} ${diffHtml}</div>
+                    <div>Signal: ${fmtPrice(signal.price)} ${diffHtml}</div>
                     <div class="muted time-rel">${fmtRelTime(signal.triggered_at)}</div>
                 </div>
                 ${tickerHtml}
@@ -784,7 +428,7 @@
         const rankClass = index < 3 ? 'ranking-rank top3' : 'ranking-rank';
         const value = type === 'volume'
             ? fmtVolume(item.volume)
-            : fmtTradeCount(item.trades) + ' ' + t("label_trades_unit");
+            : fmtTradeCount(item.trades) + ' trades';
 
         return `
             <div class="ranking-item" data-symbol="${item.symbol}">
@@ -800,8 +444,6 @@
         const effColor = getEfficiencyColor(pattern.efficiency_rank);
         const dirColor = getDirectionColor(pattern.direction);
         const dirArrow = pattern.direction === 'bullish' ? '↑' : pattern.direction === 'bearish' ? '↓' : '•';
-        const sourceLabel = pattern.source === 'talib' ? 'TA-Lib' :
-            pattern.source === 'custom' ? t("label_custom") : t("label_source_unknown");
 
         // 显示 confidence（需求 5.2）
         const confidence = pattern.confidence || 0;
@@ -818,8 +460,8 @@
                 </div>
                 <div class="sub">
                     <div>
-                        <span class="efficiency">${t("label_rank")}: ${pattern.efficiency_rank || '-'}</span>
-                        <span class="source-tag">${sourceLabel}</span>
+                        <span class="efficiency">Rank: ${pattern.efficiency_rank || '-'}</span>
+                        <span class="source-tag">${pattern.source || 'unknown'}</span>
                     </div>
                     <div class="muted time-rel" data-time="${pattern.detected_at}">${fmtRelTime(pattern.detected_at)}</div>
                 </div>
@@ -852,9 +494,8 @@
         const countInfo = count > 1 ? `(${count})` : '';
 
         // 构建 title 提示
-        const dirText = isBullish ? t("label_bullish") : isBearish ? t("label_bearish") : t("label_neutral");
-        const countText = count > 1 ? t("pattern_count", { count }) : "";
-        const title = `${name} - ${dirText} ${rate}%${timeDiff ? ' - ' + timeDiff : ''}${countText ? ' - ' + countText : ''}`;
+        const dirText = isBullish ? '看涨' : isBearish ? '看跌' : '中性';
+        const title = `${name} - ${dirText} ${rate}%${timeDiff ? ' - ' + timeDiff : ''}${count > 1 ? ' - 共' + count + '个形态' : ''}`;
 
         return `
             <span class="pattern-badge ${colorClass}" title="${title}">
@@ -873,7 +514,7 @@
             rows_in_block: 20,
             blocks_in_cluster: 4,
             tag: null,
-            no_data_text: t("no_signals"),
+            no_data_text: 'No signals',
             no_data_class: 'clusterize-no-data',
             callbacks: {
                 clusterChanged: function () {
@@ -890,7 +531,7 @@
             rows_in_block: 20,
             blocks_in_cluster: 4,
             tag: null,
-            no_data_text: t("no_patterns"),
+            no_data_text: 'No patterns',
             no_data_class: 'clusterize-no-data',
             callbacks: {
                 clusterChanged: function () {
@@ -907,7 +548,7 @@
             rows_in_block: 15,
             blocks_in_cluster: 4,
             tag: null,
-            no_data_text: t("no_ranking"),
+            no_data_text: 'No ranking data',
             no_data_class: 'clusterize-no-data',
             callbacks: {
                 clusterChanged: function () {
@@ -944,9 +585,6 @@
 
     function sortRankingItems(items, type) {
         if (items.length === 0) {
-            return items;
-        }
-        if (rankingSort === 'default') {
             return items;
         }
         const sorted = [...items];
@@ -1005,7 +643,7 @@
         const rankClass = item.rank <= 3 ? 'ranking-rank top3' : 'ranking-rank';
         const value = type === 'volume'
             ? fmtVolume(item.volume)
-            : fmtTradeCount(item.trade_count) + ' ' + t("label_trades_unit");
+            : fmtTradeCount(item.trade_count) + ' trades';
 
         // Rank change indicator
         let changeHtml = '';
@@ -1019,7 +657,7 @@
                 changeHtml = `<span class="rank-change">-</span>`;
             }
         } else if (item.is_new) {
-            changeHtml = `<span class="rank-change new">${t("label_new")}</span>`;
+            changeHtml = `<span class="rank-change new">NEW</span>`;
         }
 
         // Price change indicator
@@ -1280,8 +918,8 @@
         $("modalSymbol").textContent = pattern.symbol;
         $("modalPatternName").textContent = pattern.pattern_cn || pattern.pattern;
 
-        const dirText = pattern.direction === 'bullish' ? t("pattern_direction_bullish") :
-            pattern.direction === 'bearish' ? t("pattern_direction_bearish") : t("label_neutral");
+        const dirText = pattern.direction === 'bullish' ? 'Bullish ↑' :
+            pattern.direction === 'bearish' ? 'Bearish ↓' : 'Neutral';
         $("modalDirection").textContent = dirText;
         $("modalDirection").className = 'value ' + pattern.direction;
 
@@ -1298,7 +936,7 @@
         $("modalConfidence").textContent = (pattern.confidence || 0) + '%';
 
         const sourceText = pattern.source === 'talib' ? 'TA-Lib' :
-            pattern.source === 'custom' ? t("label_custom") : (pattern.source || t("label_source_unknown"));
+            pattern.source === 'custom' ? 'Custom' : pattern.source || '-';
         $("modalSource").textContent = sourceText + (pattern.stats_source ? ' (' + pattern.stats_source + ')' : '');
 
         $("modalDetectedAt").textContent = fmtTime(pattern.detected_at);
@@ -1326,14 +964,14 @@
 
         // Show loading state
         const currentDiv = $("rankingModalCurrent");
-        currentDiv.innerHTML = `<div style="text-align:center;color:var(--text-tertiary)">${t("text_loading")}</div>`;
+        currentDiv.innerHTML = '<div style="text-align:center;color:var(--text-tertiary)">Loading...</div>';
 
         modal.style.display = 'flex';
 
         // Load history data
         const historyData = await loadRankingHistory(symbol);
         if (!historyData || !historyData.snapshots || historyData.snapshots.length === 0) {
-            currentDiv.innerHTML = `<div style="text-align:center;color:var(--text-tertiary)">${t("text_no_history")}</div>`;
+            currentDiv.innerHTML = '<div style="text-align:center;color:var(--text-tertiary)">No history data</div>';
             return;
         }
 
@@ -1342,19 +980,19 @@
         const ticker = tickerData.get(symbol);
         currentDiv.innerHTML = `
             <div class="current-row">
-                <span class="current-label">${t("label_volume_rank")}</span>
+                <span class="current-label">Volume Rank</span>
                 <span class="current-value">#${latest.volume_rank}</span>
             </div>
             <div class="current-row">
-                <span class="current-label">${t("label_trades_rank")}</span>
+                <span class="current-label">Trades Rank</span>
                 <span class="current-value">#${latest.trades_rank}</span>
             </div>
             <div class="current-row">
-                <span class="current-label">${t("label_price")}</span>
+                <span class="current-label">Price</span>
                 <span class="current-value">${fmtPrice(ticker ? ticker.last_price : latest.price)}</span>
             </div>
             <div class="current-row">
-                <span class="current-label">${t("label_volume")}</span>
+                <span class="current-label">Volume</span>
                 <span class="current-value">${fmtVolume(latest.volume)}</span>
             </div>
         `;
@@ -1390,7 +1028,7 @@
             ctx.fillStyle = '#707A8A';
             ctx.font = '11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(t("text_not_enough_data"), width / 2, height / 2);
+            ctx.fillText('Not enough data', width / 2, height / 2);
             return;
         }
 
@@ -1483,7 +1121,7 @@
                     applyFilters();
                     updateView();
                     hideRankingModal();
-                    showToast(t("toast_filtered", { symbol: currentRankingSymbol }));
+                    showToast("Filtered: " + currentRankingSymbol);
                 }
             };
         }
@@ -1494,7 +1132,7 @@
         currentPivotPreviewSymbol = symbol;
         const pivotData = await getPivotData(symbol);
         if (!pivotData) {
-            showToast(t("toast_no_pivot", { symbol }));
+            showToast('No pivot data for ' + symbol);
             return;
         }
 
@@ -1512,7 +1150,7 @@
 
         const levels = period === '1w' ? pivotData.weekly : pivotData.daily;
         if (!levels) {
-            container.innerHTML = `<div class="no-data">${t("toast_no_data")}</div>`;
+            container.innerHTML = '<div class="no-data">No data</div>';
             return;
         }
 
@@ -1549,7 +1187,7 @@
             // 在适当位置插入当前价格
             if (!currentPriceInserted && currentPrice > 0 && level.price < currentPrice) {
                 html += `<div class="pivot-level current-price">
-                    <span class="level-name">${t("label_current_price")}</span>
+                    <span class="level-name">当前价格</span>
                     <span class="level-price">${fmtPrice(currentPrice)}</span>
                     <span class="level-pct">--</span>
                 </div>`;
@@ -1570,7 +1208,7 @@
         // 如果当前价格低于所有点位
         if (!currentPriceInserted && currentPrice > 0) {
             html += `<div class="pivot-level current-price">
-                <span class="level-name">${t("label_current_price")}</span>
+                <span class="level-name">当前价格</span>
                 <span class="level-price">${fmtPrice(currentPrice)}</span>
                 <span class="level-pct">--</span>
             </div>`;
@@ -1664,8 +1302,8 @@
 
                     case "copy":
                         copyToClipboard(menuSymbol)
-                            .then(() => showToast(t("toast_copied", { symbol: menuSymbol })))
-                            .catch(() => showToast(t("toast_copy_failed")));
+                            .then(() => showToast("Copied: " + menuSymbol))
+                            .catch(() => showToast("Copy failed"));
                         break;
 
                     case "filter":
@@ -1675,12 +1313,12 @@
                             $("symbol").value = "";
                             applyFilters();
                             updateView();
-                            showToast(t("toast_filter_cleared"));
+                            showToast("Filter cleared");
                         } else {
                             $("symbol").value = exactSymbol;
                             applyFilters();
                             updateView();
-                            showToast(t("toast_filtered", { symbol: menuSymbol }));
+                            showToast("Filtered: " + menuSymbol);
                         }
                         break;
 
@@ -1693,7 +1331,7 @@
                         });
                         applyFilters();
                         updateView();
-                        showToast(t("toast_showing_signals", { symbol: menuSymbol }));
+                        showToast("Showing signals for " + menuSymbol);
                         break;
 
                     case "pivots":
@@ -1766,19 +1404,7 @@
         });
     }
 
-    function setupLanguage() {
-        const langSelect = $("langSelect");
-        if (!langSelect) return;
-        langSelect.onchange = () => setLanguage(langSelect.value);
-    }
-
     function setupFilters() {
-        const updateRankingSortControls = () => {
-            const orderEl = $("rankingSortOrder");
-            if (orderEl) {
-                orderEl.disabled = rankingSort === 'default';
-            }
-        };
         // Symbol 搜索（防抖，仅前端过滤）
         const debouncedFilter = debounce(() => {
             applyFilters();
@@ -1820,8 +1446,6 @@
         const rankingRefreshEl = $("rankingRefresh");
         const rankingSortEl = $("rankingSort");
         const rankingSortOrderEl = $("rankingSortOrder");
-        if (rankingSortEl) rankingSortEl.value = rankingSort;
-        if (rankingSortOrderEl) rankingSortOrderEl.value = rankingSortOrder;
         if (rankingCompareEl) {
             rankingCompareEl.onchange = () => {
                 rankingCompare = rankingCompareEl.value;
@@ -1832,8 +1456,7 @@
         }
         if (rankingSortEl) {
             rankingSortEl.onchange = () => {
-                rankingSort = rankingSortEl.value || 'default';
-                updateRankingSortControls();
+                rankingSort = rankingSortEl.value || 'rank';
                 if (currentView === 'volume' || currentView === 'trades') {
                     updateRankingList();
                 }
@@ -1854,8 +1477,6 @@
                 }
             };
         }
-
-        updateRankingSortControls();
     }
 
     function setupPatternModal() {
@@ -1880,7 +1501,7 @@
             applyPatternFilters();
             updateView();
             hidePatternModal();
-            showToast(t("toast_filtered", { symbol: currentPatternSignal.symbol }));
+            showToast("Filtered: " + currentPatternSignal.symbol);
         };
     }
 
@@ -1930,9 +1551,7 @@
         // 计算时间差
         const diffMs = signalTs - new Date(closest.detected_at).getTime();
         const diffMin = Math.round(Math.abs(diffMs) / 60000);
-        const timeDiff = diffMs >= 0
-            ? t("time_minutes_ago", { m: diffMin })
-            : t("time_in_minutes", { m: diffMin });
+        const timeDiff = diffMs >= 0 ? `${diffMin}m ago` : `in ${diffMin}m`;
 
         return {
             id: closest.id,
@@ -2015,17 +1634,17 @@
         const pct = ((level.price - currentPrice) / currentPrice * 100);
         const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
         const colorClass = pct >= 0 ? 'pivot-up' : 'pivot-down';
-        const periodLabel = period === '1w' ? t("period_week_short") : t("period_day_short");
+        const periodLabel = period === '1w' ? '周' : '日';
         return `<span class="${colorClass}">${periodLabel}:${level.name}(${pctStr})</span>`;
     }
 
     async function loadHistory() {
         const limit = $("limit").value || 1000;
-        $("hint").textContent = t("hint_loading");
+        $("hint").textContent = "Loading...";
 
         try {
             const r = await fetch(`/api/history?limit=${limit}`);
-            if (!r.ok) throw new Error(t("error_http", { status: r.status }));
+            if (!r.ok) throw new Error("http " + r.status);
 
             const data = await r.json();
             masterSignals = (data || []).sort((a, b) =>
@@ -2045,7 +1664,7 @@
             applyFilters();
             updateView();
         } catch (e) {
-            $("hint").textContent = t("hint_load_failed", { error: e });
+            $("hint").textContent = "Load failed: " + e;
         }
     }
 
@@ -2056,8 +1675,8 @@
             const d = await r.json();
 
             const fmt = p => p ? (
-                (p.is_stale ? `<span class="pill stale">${t("status_stale")}</span>` : `<span class="pill fresh">${t("status_ok")}</span>`) +
-                " " + fmtDur(p.seconds_until) + " (" + t("label_symbols", { count: p.symbol_count }) + ")"
+                (p.is_stale ? '<span class="pill stale">STALE</span>' : '<span class="pill fresh">OK</span>') +
+                " " + fmtDur(p.seconds_until) + " (" + p.symbol_count + " symbols)"
             ) : "-";
 
             $("dailyStatus").innerHTML = fmt(d.daily);
@@ -2140,10 +1759,9 @@
                 if (data.timestamp) {
                     const ts = new Date(data.timestamp);
                     const compareTs = data.compare_to ? new Date(data.compare_to) : null;
-                    const typeLabel = rankingTypeLabel(type);
                     const hint = compareTs
-                        ? t("hint_ranking", { type: typeLabel, count: data.items.length, time: fmtRelTime(compareTs) })
-                        : t("hint_ranking_simple", { type: typeLabel, count: data.items.length });
+                        ? `${type}: ${data.items.length} items (vs ${fmtRelTime(compareTs)})`
+                        : `${type}: ${data.items.length} items`;
                     $("hint").textContent = hint;
                 }
             }
@@ -2315,7 +1933,7 @@
                     const diffPct = (diff / signalPrice) * 100;
                     const diffSign = diff >= 0 ? '+' : '';
                     const diffClass = diff >= 0 ? 'up' : 'down';
-                    subDiv.innerHTML = `${t("label_signal")}: ${fmtPrice(signalPrice)} <span class="price-diff ${diffClass}">${diffSign}${diffPct.toFixed(2)}%</span>`;
+                    subDiv.innerHTML = `Signal: ${fmtPrice(signalPrice)} <span class="price-diff ${diffClass}">${diffSign}${diffPct.toFixed(2)}%</span>`;
                 }
 
                 // 更新 ticker 信息
@@ -2331,7 +1949,7 @@
                     <span class="price-now">${fmtPrice(ticker.last_price)}</span>
                     <span class="price-pct ${pctClass}">${fmtPct(ticker.price_percent)}</span>
                     <span class="volume">${fmtVolume(ticker.quote_volume)}</span>
-                    <span class="trades">${fmtTradeCount(ticker.trade_count)} ${t("label_trades_unit")}</span>
+                    <span class="trades">${fmtTradeCount(ticker.trade_count)} trades</span>
                 `;
 
                 // 更新枢轴点位（仅可视项，使用同步版本）
@@ -2447,13 +2065,11 @@
         // 立即设置 --vh 变量（iOS PWA 关键）
         setVh();
 
-        applyI18n();
         loadSettings();
         updateSoundLevelBtns();
         updateFilterLevelBtns();
         setupLevelBtns();
         setupTabs();
-        setupLanguage();
         setupFilters();
         setupActionMenu();
         setupPatternModal();
