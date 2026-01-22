@@ -528,6 +528,9 @@ func (m *Monitor) onKlineClose(symbol string, klines []kline.Kline) {
 		return
 	}
 
+	// Log kline close event for debugging
+	log.Printf("pattern: onKlineClose symbol=%s klines=%d", symbol, len(klines))
+
 	// Detect patterns with timing (Requirement 7.5: warn if >100ms)
 	startTime := time.Now()
 	patterns := m.PatternDetector.Detect(klines)

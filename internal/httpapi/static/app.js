@@ -78,6 +78,7 @@
             action_copy_symbol: "📋 复制币种",
             action_filter_symbol: "🔍 筛选币种",
             action_show_signals: "📊 查看信号",
+            action_kline_preview: "K线预览",
             panel_signals: "信号",
             panel_volume: "成交额",
             panel_trades: "成交笔数",
@@ -138,7 +139,19 @@
             hint_ranking_simple: "{type}: {count} 项",
             type_volume: "成交额",
             type_trades: "成交笔数",
-            label_signal: "信号"
+            label_signal: "信号",
+            new_signals_tip: "有 {count} 条新信号",
+            new_signals_action: "点击查看",
+            new_signals_badge: "新 {count}",
+            kline_title: "K线预览",
+            kline_interval: "周期",
+            kline_loading: "加载K线中...",
+            kline_unavailable: "当前网络无法访问 Binance 永续合约",
+            kline_network_fail: "K线加载失败，请检查网络",
+            kline_no_data: "暂无K线数据",
+            kline_price: "价格",
+            kline_time: "时间",
+            kline_click_load: "点击时间轴加载该时间段"
         },
         en: {
             app_title: "Pivot Monitor",
@@ -212,6 +225,7 @@
             action_copy_symbol: "📋 Copy Symbol",
             action_filter_symbol: "🔍 Filter Symbol",
             action_show_signals: "📊 Show Signals",
+            action_kline_preview: "Kline Preview",
             panel_signals: "Signals",
             panel_volume: "Volume",
             panel_trades: "Trades",
@@ -272,7 +286,19 @@
             hint_ranking_simple: "{type}: {count} items",
             type_volume: "Volume",
             type_trades: "Trades",
-            label_signal: "Signal"
+            label_signal: "Signal",
+            new_signals_tip: "{count} new signals",
+            new_signals_action: "View now",
+            new_signals_badge: "New {count}",
+            kline_title: "Kline Preview",
+            kline_interval: "Interval",
+            kline_loading: "Loading klines...",
+            kline_unavailable: "Binance Futures is not reachable",
+            kline_network_fail: "Failed to load klines",
+            kline_no_data: "No kline data",
+            kline_price: "Price",
+            kline_time: "Time",
+            kline_click_load: "Click the time axis to load around that point"
         }
     };
 
@@ -323,6 +349,17 @@
 
         if ($("status")) {
             setStatus(currentStatus);
+        }
+
+        updateNewSignalBanner();
+        if (typeof updateKlineIntervalLabel === "function") {
+            updateKlineIntervalLabel();
+        }
+        if (typeof updateKlineMeta === "function") {
+            const point = (typeof klineHoverIndex === "number" && currentKlineData[klineHoverIndex])
+                ? currentKlineData[klineHoverIndex]
+                : null;
+            updateKlineMeta(point);
         }
     }
 
@@ -449,6 +486,11 @@
     let currentPatternSignal = null; // 当前显示详情的形态信号
     let currentPivotPreviewSymbol = null; // 当前预览的交易对
     let currentPivotPreviewPeriod = '1d'; // 当前预览的周期
+    let pendingSignalCount = 0; // 滚动期间积压的新信号数
+    const SIGNAL_SCROLL_THRESHOLD = 8;
+    const SIGNAL_SCROLL_IDLE_MS = 220;
+    const signalScrollState = { isScrolling: false, awayFromTop: false, idleTimer: null };
+    const wideSignalScrollState = { isScrolling: false, awayFromTop: false, idleTimer: null };
 
     // Clusterize 实例
     let signalCluster = null;
@@ -507,6 +549,114 @@
     };
 
     const debounce = (fn, ms) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; };
+
+    function updateNewSignalBanner() {
+        const count = pendingSignalCount;
+        const banner = $("signalNewBanner");
+        const bannerWide = $("signalNewBannerWide");
+        const text = t("new_signals_tip", { count });
+        const actionText = t("new_signals_action");
+        const badge = $("pendingBadge");
+        const badgeText = t("new_signals_badge", { count });
+
+        if (banner) {
+            const textEl = $("signalNewText");
+            const btn = $("signalNewApply");
+            if (textEl) textEl.textContent = text;
+            if (btn) btn.textContent = actionText;
+            banner.style.display = (!isWidescreen && currentView === 'signals' && count > 0) ? 'flex' : 'none';
+        }
+
+        if (bannerWide) {
+            const textElWide = $("signalNewTextWide");
+            const btnWide = $("signalNewApplyWide");
+            if (textElWide) textElWide.textContent = text;
+            if (btnWide) btnWide.textContent = actionText;
+            bannerWide.style.display = (isWidescreen && count > 0) ? 'flex' : 'none';
+        }
+
+        if (badge) {
+            badge.textContent = badgeText;
+            badge.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+    }
+
+    function clearPendingSignals() {
+        if (pendingSignalCount === 0) return;
+        pendingSignalCount = 0;
+        updateNewSignalBanner();
+    }
+
+    function applyPendingSignals() {
+        if (pendingSignalCount === 0) return;
+        pendingSignalCount = 0;
+        const scrollEl = isWidescreen ? $("wideSignalScroll") : $("signalScroll");
+        if (scrollEl) scrollEl.scrollTop = 0;
+
+        applyFilters();
+        if (isWidescreen) {
+            updateWideSignalPanel();
+        } else if (currentView === 'signals') {
+            updateSignalList();
+        }
+        updateNewSignalBanner();
+    }
+
+    function handleSignalScroll(el, state) {
+        state.awayFromTop = el.scrollTop > SIGNAL_SCROLL_THRESHOLD;
+        state.isScrolling = true;
+        if (state.idleTimer) clearTimeout(state.idleTimer);
+        state.idleTimer = setTimeout(() => {
+            state.isScrolling = false;
+            state.awayFromTop = el.scrollTop > SIGNAL_SCROLL_THRESHOLD;
+            const canAutoApply = pendingSignalCount > 0 && !state.awayFromTop &&
+                (isWidescreen || currentView === 'signals');
+            if (canAutoApply) {
+                applyPendingSignals();
+                return;
+            }
+            updateNewSignalBanner();
+        }, SIGNAL_SCROLL_IDLE_MS);
+        updateNewSignalBanner();
+    }
+
+    function isSignalScrollBusy(isWide) {
+        const scrollEl = isWide ? $("wideSignalScroll") : $("signalScroll");
+        const state = isWide ? wideSignalScrollState : signalScrollState;
+        if (!scrollEl) return false;
+        state.awayFromTop = scrollEl.scrollTop > SIGNAL_SCROLL_THRESHOLD;
+        return state.isScrolling || state.awayFromTop;
+    }
+
+    function shouldDeferSignalUpdate() {
+        if (isWidescreen) {
+            return isSignalScrollBusy(true);
+        }
+        if (currentView !== 'signals') return false;
+        return isSignalScrollBusy(false);
+    }
+
+    function setupSignalScrollTracking() {
+        const signalScroll = $("signalScroll");
+        if (signalScroll) {
+            signalScroll.addEventListener('scroll', () => {
+                handleSignalScroll(signalScroll, signalScrollState);
+            }, { passive: true });
+        }
+        const wideSignalScroll = $("wideSignalScroll");
+        if (wideSignalScroll) {
+            wideSignalScroll.addEventListener('scroll', () => {
+                handleSignalScroll(wideSignalScroll, wideSignalScrollState);
+            }, { passive: true });
+        }
+    }
+
+    function setupSignalNewBanner() {
+        const applyBtn = $("signalNewApply");
+        if (applyBtn) applyBtn.onclick = applyPendingSignals;
+        const applyBtnWide = $("signalNewApplyWide");
+        if (applyBtnWide) applyBtnWide.onclick = applyPendingSignals;
+    }
 
     // ==================== 设置持久化 ====================
     function loadSettings() {
@@ -796,7 +946,7 @@
         return `
             <div class="item" data-index="${index}" data-symbol="${signal.symbol}" data-price="${signal.price}" data-time="${signal.triggered_at}">
                 <div class="top">
-                    <div class="sym">${signal.symbol} ${rankHtml}</div>
+                    <div class="sym"><span class="symbol-link" data-symbol="${signal.symbol}">${signal.symbol}</span> ${rankHtml}</div>
                     <div class="tags">
                         <span class="tag">${signal.period}</span>
                         <span class="tag">${signal.level}</span>
@@ -823,7 +973,7 @@
         return `
             <div class="ranking-item" data-symbol="${item.symbol}">
                 <span class="${rankClass}">#${index + 1}</span>
-                <span class="ranking-symbol">${item.symbol}</span>
+                <span class="ranking-symbol"><span class="symbol-link" data-symbol="${item.symbol}">${item.symbol}</span></span>
                 <span class="ranking-value">${value}</span>
             </div>
         `;
@@ -843,7 +993,7 @@
         return `
             <div class="item pattern-item" data-index="${index}" data-symbol="${pattern.symbol}" data-pattern-id="${pattern.id}">
                 <div class="top">
-                    <div class="sym">${pattern.symbol}</div>
+                    <div class="sym"><span class="symbol-link" data-symbol="${pattern.symbol}">${pattern.symbol}</span></div>
                     <div class="tags">
                         <span class="tag">${pattern.pattern_cn || pattern.pattern}</span>
                         <span class="tag" style="background:${dirColor};color:#fff">${dirArrow}</span>
@@ -1049,6 +1199,8 @@
         if (countEl) {
             countEl.textContent = `${filteredSignals.length}/${masterSignals.length}`;
         }
+
+        clearPendingSignals();
     }
 
     // 更新成交额面板
@@ -1099,6 +1251,7 @@
         computeRanking();
         const rows = filteredSignals.map((s, i) => renderSignalItem(s, i));
         signalCluster.update(rows);
+        clearPendingSignals();
     }
 
     function updatePatternList() {
@@ -1212,7 +1365,7 @@
         return `
             <div class="ranking-item" data-symbol="${item.symbol}">
                 <span class="${rankClass}">#${item.rank}</span>
-                <span class="ranking-symbol">${item.symbol}</span>
+                <span class="ranking-symbol"><span class="symbol-link" data-symbol="${item.symbol}">${item.symbol}</span></span>
                 ${changeHtml}
                 <span class="ranking-value">${value}</span>
                 ${priceChangeHtml}
@@ -1262,6 +1415,8 @@
             // 恢复原有视图
             updateView();
         }
+
+        updateNewSignalBanner();
     }
 
     function updateView() {
@@ -1300,6 +1455,8 @@
                 updateRankingList();
             });
         }
+
+        updateNewSignalBanner();
     }
 
     // ==================== Intersection Observer for Pivot Levels ====================
@@ -1453,6 +1610,17 @@
     }
 
     // ==================== 事件绑定 ====================
+    function bindSymbolPreview(containerSelector) {
+        document.querySelectorAll(`${containerSelector} .symbol-link`).forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const symbol = link.dataset.symbol;
+                if (symbol) showKlineModal(symbol);
+            };
+        });
+    }
+
     function bindSignalItemEvents() {
         initPivotObserver();
 
@@ -1469,6 +1637,8 @@
                 pivotObserver.observe(item);
             }
         });
+
+        bindSymbolPreview("#signalList");
     }
 
     function bindRankingItemEvents() {
@@ -1481,6 +1651,8 @@
                 showRankingDetail(symbol);
             };
         });
+
+        bindSymbolPreview("#rankingList");
     }
 
     function bindPatternItemEvents() {
@@ -1495,6 +1667,8 @@
                 }
             };
         });
+
+        bindSymbolPreview("#patternList");
     }
 
     // ==================== 宽屏面板事件绑定 ====================
@@ -1514,6 +1688,8 @@
                 pivotObserver.observe(item);
             }
         });
+
+        bindSymbolPreview("#wideSignalList");
     }
 
     function bindWideVolumeEvents() {
@@ -1525,6 +1701,8 @@
                 showRankingDetail(symbol);
             };
         });
+
+        bindSymbolPreview("#wideVolumeList");
     }
 
     function bindWideTradesEvents() {
@@ -1536,6 +1714,8 @@
                 showRankingDetail(symbol);
             };
         });
+
+        bindSymbolPreview("#wideTradesList");
     }
 
     // ==================== Pattern 详情弹窗 ====================
@@ -1868,6 +2048,414 @@
     window.hidePivotModal = hidePivotModal;
     window.switchPivotPeriod = switchPivotPeriod;
 
+    // ==================== Kline 预览 ====================
+    const BINANCE_PING_URL = "https://fapi.binance.com/fapi/v1/ping";
+    const BINANCE_KLINE_URL = "https://fapi.binance.com/fapi/v1/klines";
+    const KLINE_INTERVALS = ["1m", "5m", "15m", "1h", "4h", "1d"];
+    const KLINE_INTERVAL_MS = {
+        "1m": 60 * 1000,
+        "5m": 5 * 60 * 1000,
+        "15m": 15 * 60 * 1000,
+        "1h": 60 * 60 * 1000,
+        "4h": 4 * 60 * 60 * 1000,
+        "1d": 24 * 60 * 60 * 1000
+    };
+    const KLINE_LIMIT = 160;
+    const KLINE_CACHE_TTL = 45 * 1000;
+    let binanceAvailable = false;
+    let binanceChecked = false;
+    let binanceCheckPromise = null;
+    let currentKlineSymbol = null;
+    let currentKlineInterval = "15m";
+    let currentKlineData = [];
+    let currentKlineCenterTime = null;
+    let currentKlinePivotData = null;
+    let klineHoverIndex = null;
+    let klineFetchController = null;
+    const klineCache = new Map();
+
+    async function checkBinanceAvailability() {
+        if (binanceCheckPromise) return binanceCheckPromise;
+        binanceCheckPromise = (async () => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 2500);
+            try {
+                const r = await fetch(BINANCE_PING_URL, { signal: controller.signal, cache: "no-store" });
+                binanceAvailable = r.ok;
+            } catch (_) {
+                binanceAvailable = false;
+            } finally {
+                clearTimeout(timer);
+                binanceChecked = true;
+            }
+            return binanceAvailable;
+        })();
+        return binanceCheckPromise;
+    }
+
+    function setKlineLoading(show, msg) {
+        const loading = $("klineLoading");
+        if (!loading) return;
+        if (msg) loading.textContent = msg;
+        loading.classList.toggle("show", show);
+    }
+
+    function showKlineError(msg) {
+        const meta = $("klineMeta");
+        if (meta) meta.textContent = msg;
+        setKlineLoading(true, msg);
+        setTimeout(() => setKlineLoading(false), 1200);
+    }
+
+    function updateKlineIntervalLabel() {
+        const label = $("klineIntervalText");
+        if (label) label.textContent = currentKlineInterval;
+        document.querySelectorAll("#klineIntervals button").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.interval === currentKlineInterval);
+        });
+    }
+
+    function fmtKlineTime(ts) {
+        try {
+            const d = new Date(ts);
+            if (isNaN(d)) return String(ts);
+            const locale = currentLang === "zh" ? "zh-CN" : "en-US";
+            if (currentKlineInterval.includes("d")) {
+                return d.toLocaleDateString(locale, { month: '2-digit', day: '2-digit' });
+            }
+            return d.toLocaleString(locale, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        } catch (_) {
+            return String(ts);
+        }
+    }
+
+    function updateKlineMeta(point) {
+        const meta = $("klineMeta");
+        if (!meta) return;
+        if (!point) {
+            meta.textContent = t("kline_no_data");
+            return;
+        }
+        const priceText = `${t("kline_price")}: ${fmtPrice(point.close)}`;
+        const timeText = `${t("kline_time")}: ${fmtKlineTime(point.openTime)}`;
+        meta.textContent = `${priceText}  ${timeText}`;
+    }
+
+    function getKlinePivotLines() {
+        if (!currentKlinePivotData) return [];
+        const ticker = tickerData.get(currentKlineSymbol);
+        const lastPoint = currentKlineData.length ? currentKlineData[currentKlineData.length - 1] : null;
+        const currentPrice = ticker ? ticker.last_price : (lastPoint ? lastPoint.close : 0);
+        if (!currentPrice) return [];
+
+        const daily = findNearestLevels(currentKlinePivotData, currentPrice, '1d');
+        const weekly = findNearestLevels(currentKlinePivotData, currentPrice, '1w');
+        const lines = [];
+
+        if (daily.above) lines.push({ price: daily.above.price, label: `D:${daily.above.name}`, type: 'resistance' });
+        if (daily.below) lines.push({ price: daily.below.price, label: `D:${daily.below.name}`, type: 'support' });
+        if (weekly.above) lines.push({ price: weekly.above.price, label: `W:${weekly.above.name}`, type: 'resistance' });
+        if (weekly.below) lines.push({ price: weekly.below.price, label: `W:${weekly.below.name}`, type: 'support' });
+
+        return lines;
+    }
+
+    function buildKlineRange(centerTime, interval) {
+        if (!centerTime) return {};
+        const step = KLINE_INTERVAL_MS[interval] || 60 * 1000;
+        const half = Math.floor(KLINE_LIMIT / 2);
+        const startTime = Math.max(0, centerTime - step * half);
+        const endTime = startTime + step * KLINE_LIMIT;
+        return { startTime, endTime };
+    }
+
+    async function fetchKlines(symbol, interval, centerTime, signal) {
+        const range = buildKlineRange(centerTime, interval);
+        const params = new URLSearchParams({
+            symbol,
+            interval,
+            limit: String(KLINE_LIMIT)
+        });
+        if (range.startTime) {
+            params.set("startTime", String(range.startTime));
+            params.set("endTime", String(range.endTime));
+        }
+        const r = await fetch(`${BINANCE_KLINE_URL}?${params.toString()}`, { cache: "no-store", signal });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const raw = await r.json();
+        if (!Array.isArray(raw)) return [];
+        return raw.map(row => ({
+            openTime: row[0],
+            open: parseFloat(row[1]),
+            high: parseFloat(row[2]),
+            low: parseFloat(row[3]),
+            close: parseFloat(row[4]),
+            volume: parseFloat(row[5]),
+            closeTime: row[6]
+        }));
+    }
+
+    async function loadKlineData(symbol, interval, centerTime) {
+        if (!symbol) return;
+        if (!binanceAvailable) {
+            showKlineError(t("kline_unavailable"));
+            return;
+        }
+
+        const key = `${symbol}_${interval}_${centerTime || 'latest'}`;
+        const cached = klineCache.get(key);
+        const now = Date.now();
+
+        if (cached && (now - cached.ts) < KLINE_CACHE_TTL) {
+            currentKlineData = cached.data;
+            currentKlineCenterTime = centerTime || null;
+            klineHoverIndex = currentKlineData.length ? currentKlineData.length - 1 : null;
+            drawKlineChart();
+            updateKlineMeta(klineHoverIndex !== null ? currentKlineData[klineHoverIndex] : null);
+            return;
+        }
+
+        if (klineFetchController) klineFetchController.abort();
+        klineFetchController = new AbortController();
+        setKlineLoading(true, t("kline_loading"));
+
+        try {
+            const data = await fetchKlines(symbol, interval, centerTime, klineFetchController.signal);
+            currentKlineData = data;
+            currentKlineCenterTime = centerTime || null;
+            klineHoverIndex = data.length ? data.length - 1 : null;
+            klineCache.set(key, { data, ts: now });
+            drawKlineChart();
+            updateKlineMeta(klineHoverIndex !== null ? data[klineHoverIndex] : null);
+            setKlineLoading(false);
+        } catch (e) {
+            if (e.name === "AbortError") return;
+            showKlineError(t("kline_network_fail"));
+        }
+    }
+
+    function drawKlineChart() {
+        const canvas = $("klineCanvas");
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, rect.width, rect.height);
+
+        const data = currentKlineData || [];
+        if (data.length < 2) {
+            ctx.fillStyle = '#707A8A';
+            ctx.font = '12px "Exo 2", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(t("kline_no_data"), rect.width / 2, rect.height / 2);
+            return;
+        }
+
+        const values = data.map(d => d.close);
+        let minVal = Math.min(...values);
+        let maxVal = Math.max(...values);
+        const paddingRange = (maxVal - minVal) * 0.08 || 1;
+        minVal -= paddingRange;
+        maxVal += paddingRange;
+
+        const padding = { left: 44, right: 12, top: 12, bottom: 24 };
+        const width = rect.width - padding.left - padding.right;
+        const height = rect.height - padding.top - padding.bottom;
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 3; i++) {
+            const y = padding.top + (height / 3) * i;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(rect.width - padding.right, y);
+            ctx.stroke();
+        }
+
+        // Line + area
+        const gradient = ctx.createLinearGradient(0, padding.top, 0, rect.height - padding.bottom);
+        gradient.addColorStop(0, 'rgba(240,185,11,0.35)');
+        gradient.addColorStop(1, 'rgba(240,185,11,0)');
+
+        ctx.beginPath();
+        data.forEach((point, i) => {
+            const x = padding.left + (i / (data.length - 1)) * width;
+            const y = padding.top + height - ((point.close - minVal) / (maxVal - minVal)) * height;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = '#F0B90B';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+
+        ctx.lineTo(padding.left + width, padding.top + height);
+        ctx.lineTo(padding.left, padding.top + height);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Axis labels
+        ctx.fillStyle = '#707A8A';
+        ctx.font = '10px "Exo 2", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(fmtPrice(maxVal), 6, padding.top + 8);
+        ctx.fillText(fmtPrice(minVal), 6, rect.height - padding.bottom);
+
+        // Pivot lines (do not affect scale)
+        const pivotLines = getKlinePivotLines();
+        pivotLines.forEach((line) => {
+            const y = padding.top + height - ((line.price - minVal) / (maxVal - minVal)) * height;
+            if (y < padding.top - 4 || y > padding.top + height + 4) return;
+
+            ctx.setLineDash(line.label.startsWith('W:') ? [6, 4] : [3, 3]);
+            ctx.strokeStyle = line.type === 'support' ? 'rgba(14,203,129,0.45)' : 'rgba(246,70,93,0.45)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(rect.width - padding.right, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const label = `${line.label} ${fmtPrice(line.price)}`;
+            ctx.fillStyle = line.type === 'support' ? 'rgba(14,203,129,0.9)' : 'rgba(246,70,93,0.9)';
+            ctx.font = '10px "Exo 2", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(label, rect.width - padding.right, Math.max(padding.top + 10, Math.min(y - 4, rect.height - padding.bottom - 4)));
+        });
+
+        // Time labels
+        const labelIndexes = [0, Math.floor(data.length / 2), data.length - 1];
+        ctx.textAlign = 'center';
+        labelIndexes.forEach(i => {
+            const x = padding.left + (i / (data.length - 1)) * width;
+            ctx.fillText(fmtKlineTime(data[i].openTime), x, rect.height - 6);
+        });
+
+        // Crosshair
+        if (klineHoverIndex !== null && data[klineHoverIndex]) {
+            const point = data[klineHoverIndex];
+            const x = padding.left + (klineHoverIndex / (data.length - 1)) * width;
+            const y = padding.top + height - ((point.close - minVal) / (maxVal - minVal)) * height;
+            ctx.strokeStyle = 'rgba(240,185,11,0.4)';
+            ctx.beginPath();
+            ctx.moveTo(x, padding.top);
+            ctx.lineTo(x, rect.height - padding.bottom);
+            ctx.stroke();
+            ctx.fillStyle = '#F0B90B';
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function handleKlineCanvasClick(e) {
+        const canvas = $("klineCanvas");
+        if (!canvas || !currentKlineData.length) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const index = Math.round((x / rect.width) * (currentKlineData.length - 1));
+        const point = currentKlineData[index];
+        if (!point) return;
+        klineHoverIndex = index;
+        updateKlineMeta(point);
+        drawKlineChart();
+
+        if (y >= rect.height - 24) {
+            loadKlineData(currentKlineSymbol, currentKlineInterval, point.openTime);
+        }
+    }
+
+    function renderKlineIntervals() {
+        const container = $("klineIntervals");
+        if (!container) return;
+        container.innerHTML = "";
+        KLINE_INTERVALS.forEach(interval => {
+            const btn = document.createElement("button");
+            btn.textContent = interval;
+            btn.dataset.interval = interval;
+            btn.onclick = () => {
+                currentKlineInterval = interval;
+                updateKlineIntervalLabel();
+                loadKlineData(currentKlineSymbol, currentKlineInterval, currentKlineCenterTime);
+            };
+            container.appendChild(btn);
+        });
+        updateKlineIntervalLabel();
+    }
+
+    function showKlineModal(symbol, interval) {
+        currentKlineSymbol = symbol;
+        if (interval) currentKlineInterval = interval;
+        const modal = $("klineModal");
+        if (!modal) return;
+
+        if (!binanceChecked) {
+            checkBinanceAvailability().then(() => {
+                if (!binanceAvailable) {
+                    showToast(t("kline_unavailable"));
+                    return;
+                }
+                showKlineModal(symbol, interval);
+            });
+            return;
+        }
+
+        if (!binanceAvailable) {
+            showToast(t("kline_unavailable"));
+            return;
+        }
+
+        $("klineSymbol").textContent = symbol;
+        modal.style.display = 'flex';
+        updateKlineIntervalLabel();
+        loadKlineData(symbol, currentKlineInterval, null);
+
+        currentKlinePivotData = null;
+        getPivotData(symbol).then(data => {
+            currentKlinePivotData = data;
+            drawKlineChart();
+        }).catch(() => {
+            currentKlinePivotData = null;
+        });
+    }
+
+    function hideKlineModal() {
+        const modal = $("klineModal");
+        if (modal) modal.style.display = 'none';
+        currentKlineSymbol = null;
+    }
+
+    function setupKlineModal() {
+        const modal = $("klineModal");
+        if (!modal) return;
+
+        modal.onclick = (e) => {
+            if (e.target === modal) hideKlineModal();
+        };
+
+        const canvas = $("klineCanvas");
+        if (canvas) {
+            canvas.addEventListener('click', handleKlineCanvasClick);
+        }
+
+        renderKlineIntervals();
+        updateKlineIntervalLabel();
+        window.addEventListener('resize', debounce(() => {
+            if (modal.style.display !== 'none') {
+                drawKlineChart();
+            }
+        }, 150));
+    }
+
+    window.hideKlineModal = hideKlineModal;
+    window.showKlineModal = showKlineModal;
+
     // ==================== 操作菜单 ====================
     function showActionMenu(e, symbol) {
         menuSymbol = symbol;
@@ -1877,7 +2465,7 @@
 
         menu.classList.add("show");
         const x = Math.min(e.clientX, window.innerWidth - 200);
-        const y = Math.min(e.clientY, window.innerHeight - 180);
+        const y = Math.min(e.clientY, window.innerHeight - 220);
         menu.style.left = x + "px";
         menu.style.top = y + "px";
     }
@@ -1964,6 +2552,10 @@
                     case "pivots":
                         // 显示枢轴点预览
                         showPivotPreview(menuSymbol);
+                        break;
+
+                    case "kline":
+                        showKlineModal(menuSymbol);
                         break;
                 }
                 hideActionMenu();
@@ -2549,6 +3141,7 @@
         es.addEventListener("signal", e => {
             try {
                 const signal = JSON.parse(e.data);
+                let deferUpdate = false;
 
                 // 声音提醒
                 if (soundLevels.has(signal.level)) playBeep();
@@ -2570,8 +3163,16 @@
                         if (masterSignals.length > limit * 1.2) {
                             masterSignals = masterSignals.slice(0, limit);
                         }
+
+                        if (shouldDeferSignalUpdate()) {
+                            pendingSignalCount += 1;
+                            updateNewSignalBanner();
+                            deferUpdate = true;
+                        }
                     }
                 }
+
+                if (deferUpdate) return;
 
                 // 重新过滤并更新视图
                 applyFilters();
@@ -2819,7 +3420,10 @@
         setupActionMenu();
         setupPatternModal();
         setupRankingModal();
+        setupKlineModal();
         initClusterize();
+        setupSignalNewBanner();
+        setupSignalScrollTracking();
 
         // 宽屏模式检测
         checkWidescreenMode();
@@ -2873,6 +3477,8 @@
             loadRuntimeStats();
             connectSSE();
         });
+
+        checkBinanceAvailability();
 
         // 定时任务
         setInterval(loadPivotStatus, 60000);

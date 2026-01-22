@@ -13,6 +13,11 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png" />
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Orbitron:wght@500;600;700&display=swap"
+        rel="stylesheet" />
     <title>枢轴监控</title>
     <!-- Clusterize.js for virtual scrolling -->
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/clusterize.js/0.19.0/clusterize.min.css" />
@@ -40,7 +45,8 @@
             --error: #F6465D;
             --error-bg: #35141D;
             --tag-bg: #434C5A;
-            --popup: #333B47
+            --popup: #333B47;
+            --shadow-1: 0 10px 24px rgba(0, 0, 0, 0.35)
         }
 
         * {
@@ -61,13 +67,14 @@
             /* JS 会设置 --vh，兜底用 100vh */
             min-height: calc(var(--vh, 1vh) * 100);
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            background: var(--bg);
+            font-family: "Exo 2", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: radial-gradient(1200px 600px at 10% -10%, rgba(240, 185, 11, 0.08), transparent 60%), var(--bg);
             color: var(--text);
             -webkit-font-smoothing: antialiased;
             display: flex;
             flex-direction: column;
-            overflow: hidden
+            overflow: hidden;
+            font-variant-numeric: tabular-nums
         }
 
         /* 固定头部区域 */
@@ -98,7 +105,9 @@
             font-size: 15px;
             color: var(--text);
             white-space: nowrap;
-            flex-shrink: 0
+            flex-shrink: 0;
+            font-family: "Orbitron", "Exo 2", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            letter-spacing: 0.4px
         }
 
         /* Header search input */
@@ -264,6 +273,19 @@
         .pill.fresh {
             background: var(--success-bg);
             color: var(--success)
+        }
+
+        .pending-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            font-size: 10px;
+            border-radius: 6px;
+            background: rgba(240, 185, 11, 0.15);
+            color: var(--yellow);
+            border: 1px solid rgba(240, 185, 11, 0.35);
+            font-weight: 600
         }
 
         .controls {
@@ -474,6 +496,16 @@
             display: flex;
             align-items: center;
             gap: 6px
+        }
+
+        .symbol-link {
+            color: var(--text);
+            cursor: pointer;
+            transition: color .15s
+        }
+
+        .symbol-link:hover {
+            color: var(--yellow)
         }
 
         .ranks {
@@ -751,6 +783,75 @@
             opacity: 1
         }
 
+        /* 新信号提示条 */
+        .new-signal-banner {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(240, 185, 11, 0.35);
+            background: linear-gradient(90deg, rgba(240, 185, 11, 0.16), rgba(240, 185, 11, 0.04));
+            color: var(--text);
+            font-size: 12px;
+            box-shadow: var(--shadow-1)
+        }
+
+        .new-signal-banner .banner-left {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .new-signal-banner .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--yellow);
+            box-shadow: 0 0 0 0 rgba(240, 185, 11, 0.6);
+            animation: pulse 1.6s ease-out infinite
+        }
+
+        .new-signal-banner .banner-text {
+            color: var(--text);
+            font-weight: 600
+        }
+
+        .new-signal-banner .banner-btn {
+            background: var(--yellow);
+            color: #202630;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600
+        }
+
+        .new-signal-banner .banner-btn:hover {
+            background: var(--btn-bg)
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(240, 185, 11, 0.5)
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(240, 185, 11, 0)
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(240, 185, 11, 0)
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .pulse-dot {
+                animation: none
+            }
+        }
+
         /* 小输入框 */
         .input-sm {
             width: 70px;
@@ -856,6 +957,140 @@
             align-items: center;
             justify-content: center;
             z-index: 2000
+        }
+
+        /* K 线预览弹窗 */
+        .kline-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2200
+        }
+
+        .kline-modal-content {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            width: 680px;
+            max-width: 94vw;
+            box-shadow: var(--shadow-1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        .kline-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: var(--vessel);
+            border-bottom: 1px solid var(--line);
+            flex-wrap: wrap
+        }
+
+        .kline-toolbar .kline-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text)
+        }
+
+        .kline-intervals {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap
+        }
+
+        .kline-intervals button {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: var(--card);
+            color: var(--text-secondary);
+            border: 1px solid var(--line);
+            cursor: pointer;
+            transition: all .15s
+        }
+
+        .kline-intervals button.active {
+            background: var(--yellow);
+            color: #202630;
+            border-color: transparent
+        }
+
+        .kline-chart {
+            position: relative;
+            height: 280px;
+            padding: 8px 12px 4px;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.35), transparent)
+        }
+
+        #klineCanvas {
+            width: 100%;
+            height: 100%;
+            display: block
+        }
+
+        .kline-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            background: rgba(32, 38, 48, 0.65);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s
+        }
+
+        .kline-loading.show {
+            opacity: 1;
+            pointer-events: auto
+        }
+
+        .kline-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--line);
+            background: var(--card)
+        }
+
+        .kline-meta {
+            color: var(--text);
+            font-weight: 600
+        }
+
+        .kline-hint {
+            color: var(--text-tertiary)
+        }
+
+        @media(max-width:520px) {
+            .kline-modal-content {
+                width: 96vw
+            }
+
+            .kline-chart {
+                height: 220px
+            }
+
+            .kline-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px
+            }
         }
 
         .pattern-modal-content {
@@ -1134,6 +1369,15 @@
             display: none
         }
 
+        header,
+        .pivot-status,
+        .item,
+        .ranking-item,
+        .panel {
+            box-shadow: var(--shadow-1);
+            border-color: rgba(255, 255, 255, 0.06)
+        }
+
         .pivot-pair {
             display: inline-flex;
             gap: 6px
@@ -1341,6 +1585,7 @@
                 <span class="sound-icon">🔔</span>
             </label>
             <span id="status" class="pill" data-i18n="status_disconnected">未连接</span>
+            <span id="pendingBadge" class="pending-badge" style="display:none">-</span>
             <button id="refresh" type="button" data-i18n="btn_refresh">刷新</button>
         </header>
         <div class="pivot-status">
@@ -1488,6 +1733,13 @@
                 <span class="panel-title" data-i18n="panel_signals">信号</span>
                 <span class="panel-count" id="signalPanelCount">0</span>
             </div>
+            <div id="signalNewBannerWide" class="new-signal-banner" aria-live="polite">
+                <div class="banner-left">
+                    <span class="pulse-dot"></span>
+                    <span id="signalNewTextWide" class="banner-text">-</span>
+                </div>
+                <button id="signalNewApplyWide" type="button" class="banner-btn">-</button>
+            </div>
             <div id="wideSignalScroll" class="panel-scroll clusterize-scroll">
                 <div id="wideSignalList" class="clusterize-content"></div>
             </div>
@@ -1552,6 +1804,13 @@
     <!-- 滚动列表区域 (mobile/tablet mode) -->
     <div class="scroll-area">
         <div class="scroll-content">
+            <div id="signalNewBanner" class="new-signal-banner" aria-live="polite">
+                <div class="banner-left">
+                    <span class="pulse-dot"></span>
+                    <span id="signalNewText" class="banner-text">-</span>
+                </div>
+                <button id="signalNewApply" type="button" class="banner-btn">-</button>
+            </div>
             <div id="signalScroll" class="clusterize-scroll">
                 <div id="signalList" class="clusterize-content"></div>
             </div>
@@ -1617,6 +1876,7 @@
     <div id="actionMenu" class="action-menu">
         <div class="action-menu-item" data-action="trade" data-i18n="action_jump_trade">🚀 跳转交易</div>
         <div class="action-menu-item" data-action="pivots" data-i18n="action_pivot_levels">📊 枢轴点位</div>
+        <div class="action-menu-item" data-action="kline" data-i18n="action_kline_preview">K线预览</div>
         <div class="action-menu-item" data-action="copy" data-i18n="action_copy_symbol">📋 复制币种</div>
         <div class="action-menu-item" data-action="filter" data-i18n="action_filter_symbol">🔍 筛选币种</div>
         <div class="action-menu-item" data-action="signals" style="display:none" data-i18n="action_show_signals">📊 查看信号
@@ -1667,6 +1927,31 @@
             <div class="modal-footer">
                 <button id="rankingModalTradeBtn" class="btn-trade" data-i18n="btn_trade">交易</button>
                 <button id="rankingModalFilterBtn" class="btn-filter" data-i18n="btn_filter">筛选</button>
+            </div>
+        </div>
+    </div>
+    <!-- Kline Preview Modal -->
+    <div id="klineModal" class="kline-modal" style="display:none">
+        <div class="kline-modal-content">
+            <div class="modal-header">
+                <span id="klineSymbol" class="symbol"></span>
+                <span class="pattern-name" id="klineIntervalLabel" data-i18n="kline_title">K线预览</span>
+                <button class="close-btn" onclick="hideKlineModal()">&times;</button>
+            </div>
+            <div class="kline-toolbar">
+                <div class="kline-title">
+                    <span data-i18n="kline_interval">周期</span>
+                    <span id="klineIntervalText" class="tag">-</span>
+                </div>
+                <div id="klineIntervals" class="kline-intervals"></div>
+            </div>
+            <div class="kline-chart">
+                <canvas id="klineCanvas"></canvas>
+                <div id="klineLoading" class="kline-loading"></div>
+            </div>
+            <div class="kline-footer">
+                <div id="klineMeta" class="kline-meta">-</div>
+                <div id="klineHint" class="kline-hint" data-i18n="kline_click_load">点击时间轴加载</div>
             </div>
         </div>
     </div>

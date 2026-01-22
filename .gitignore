@@ -35,3 +35,6 @@ dist/
 .DS_Store
 Thumbs.db
 server
+.codex/*
+.backup/*
+backup/

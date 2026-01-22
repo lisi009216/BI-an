@@ -121,6 +121,9 @@ func main() {
 			patternHistory, _ = pattern.NewHistory("", 10000)
 		}
 
+		// Start kline close timer for synchronized closes at interval boundaries
+		klineStore.StartCloseTimer()
+
 		log.Printf("pattern recognition enabled: kline_count=%d interval=%v", klineCount, klineInterval)
 	}
 

@@ -21,6 +21,7 @@ type Store struct {
 	interval time.Duration
 	maxCount int
 	onClose  func(symbol string, klines []Kline)
+	stopCh   chan struct{}
 }
 
 // DefaultKlineCount is the default number of klines to maintain per symbol.
@@ -40,6 +41,7 @@ func NewStore(interval time.Duration, maxCount int) *Store {
 		klines:   make(map[string]*SymbolKlines),
 		interval: interval,
 		maxCount: maxCount,
+		stopCh:   make(chan struct{}),
 	}
 }
 
@@ -49,6 +51,125 @@ func (s *Store) SetOnClose(fn func(symbol string, klines []Kline)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.onClose = fn
+}
+
+// StartCloseTimer starts a timer that triggers kline close at interval boundaries.
+// This ensures all symbols close their klines at the same time (e.g., 00, 15, 30, 45 for 15m interval).
+func (s *Store) StartCloseTimer() {
+	go func() {
+		for {
+			// Calculate time until next interval boundary
+			now := time.Now().UTC()
+			currentOpen := getKlineOpenTime(now, s.interval)
+			nextClose := getKlineCloseTime(currentOpen, s.interval)
+			// Add a small delay (2 seconds) to ensure we're past the boundary
+			sleepDuration := nextClose.Sub(now) + 2*time.Second
+			if sleepDuration < 0 {
+				sleepDuration = s.interval
+			}
+
+			log.Printf("kline: timer scheduled - now=%s currentOpen=%s nextClose=%s sleepFor=%v",
+				now.Format("15:04:05"), currentOpen.Format("15:04:05"), nextClose.Format("15:04:05"), sleepDuration.Round(time.Second))
+
+			select {
+			case <-s.stopCh:
+				return
+			case <-time.After(sleepDuration):
+				s.closeAllKlines()
+			}
+		}
+	}()
+}
+
+// StopCloseTimer stops the close timer.
+func (s *Store) StopCloseTimer() {
+	close(s.stopCh)
+}
+
+// closeAllKlines forces all current klines to close.
+// Called by the timer at interval boundaries.
+func (s *Store) closeAllKlines() {
+	s.mu.Lock()
+
+	now := time.Now().UTC()
+	// Calculate the previous interval's close time (which is the current interval's open time)
+	currentOpen := getKlineOpenTime(now, s.interval)
+	previousClose := currentOpen // The previous kline should close at currentOpen
+
+	log.Printf("kline: closeAllKlines triggered at %s, tracking %d symbols, previousClose=%s",
+		now.Format("15:04:05"), len(s.klines), previousClose.Format("15:04:05"))
+
+	var toClose []struct {
+		symbol   string
+		snapshot []Kline
+	}
+
+	skippedNoKline := 0
+	skippedNotReady := 0
+
+	for symbol, sk := range s.klines {
+		if sk.Current == nil {
+			skippedNoKline++
+			continue
+		}
+
+		// Check if current kline belongs to the previous interval
+		// A kline should be closed if its OpenTime is before the current interval's open time
+		if !sk.Current.OpenTime.Before(currentOpen) {
+			skippedNotReady++
+			continue
+		}
+
+		// Close current kline
+		sk.Current.IsClosed = true
+		sk.Current.CloseTime = currentOpen // Close time is the start of the new interval
+
+		// Append to history
+		sk.History = append(sk.History, *sk.Current)
+
+		// Maintain rolling window size
+		if len(sk.History) > s.maxCount {
+			sk.History = sk.History[len(sk.History)-s.maxCount:]
+		}
+
+		// Create deep copy snapshot for callback
+		snapshot := make([]Kline, len(sk.History))
+		copy(snapshot, sk.History)
+
+		toClose = append(toClose, struct {
+			symbol   string
+			snapshot []Kline
+		}{symbol, snapshot})
+
+		// Create new kline
+		sk.Current = &Kline{
+			Symbol:   symbol,
+			Open:     sk.Current.Close, // Use last close as new open
+			High:     sk.Current.Close,
+			Low:      sk.Current.Close,
+			Close:    sk.Current.Close,
+			OpenTime: currentOpen,
+		}
+	}
+
+	onClose := s.onClose
+	s.mu.Unlock()
+
+	// Log statistics
+	if skippedNoKline > 0 || skippedNotReady > 0 {
+		log.Printf("kline: skipped %d (no current), %d (not ready)", skippedNoKline, skippedNotReady)
+	}
+
+	// Call callbacks outside lock
+	if onClose != nil {
+		for _, item := range toClose {
+			go onClose(item.symbol, item.snapshot)
+		}
+	}
+
+	if len(toClose) > 0 {
+		log.Printf("kline: closed %d symbols at interval boundary", len(toClose))
+	}
 }
 
 // getKlineOpenTime calculates the kline open time aligned to interval boundary.
