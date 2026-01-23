@@ -21,1546 +21,9 @@
     <title>枢轴监控</title>
     <!-- Clusterize.js for virtual scrolling -->
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/clusterize.js/0.19.0/clusterize.min.css" />
-    <style>
-        :root {
-            --bg: #181A20;
-            --secondary-bg: #0B0E11;
-            --card: #202630;
-            --vessel: #29313D;
-            --input: #29313D;
-            --input-line: #434C5A;
-            --line: #333B47;
-            --text: #EAECEF;
-            --text-secondary: #929AA5;
-            --text-tertiary: #707A8A;
-            --text-disabled: #4F5867;
-            --yellow: #F0B90B;
-            --btn-bg: #FCD535;
-            --buy: #0ECB81;
-            --buy-bg: rgba(46, 189, 133, 0.1);
-            --sell: #F6465D;
-            --sell-bg: rgba(246, 70, 93, 0.1);
-            --success: #2EBD85;
-            --success-bg: #102821;
-            --error: #F6465D;
-            --error-bg: #35141D;
-            --tag-bg: #434C5A;
-            --popup: #333B47;
-            --shadow-1: 0 10px 24px rgba(0, 0, 0, 0.35)
-        }
+    <link rel="stylesheet" href="/static/app.css" />
 
-        * {
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0
-        }
-
-        html {
-            height: 100%;
-            background: var(--bg)
-        }
-
-        body {
-            height: 100%;
-            /* JS 会设置 --vh，兜底用 100vh */
-            min-height: calc(var(--vh, 1vh) * 100);
-            margin: 0;
-            font-family: "Exo 2", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            background: radial-gradient(1200px 600px at 10% -10%, rgba(240, 185, 11, 0.08), transparent 60%), var(--bg);
-            color: var(--text);
-            -webkit-font-smoothing: antialiased;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            font-variant-numeric: tabular-nums
-        }
-
-        /* 固定头部区域 */
-        .header-area {
-            flex-shrink: 0;
-            max-width: 860px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 12px;
-            padding-top: max(12px, env(safe-area-inset-top));
-            background: var(--bg)
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            border-radius: 8px;
-            background: var(--card);
-            border: 1px solid var(--line);
-            flex-wrap: nowrap
-        }
-
-        .title {
-            font-weight: 700;
-            font-size: 15px;
-            color: var(--text);
-            white-space: nowrap;
-            flex-shrink: 0;
-            font-family: "Orbitron", "Exo 2", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            letter-spacing: 0.4px
-        }
-
-        /* Header search input */
-        .header-search {
-            flex: 1;
-            min-width: 60px;
-            max-width: 120px;
-            padding: 6px 10px;
-            font-size: 12px;
-            background: var(--vessel);
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            color: var(--text)
-        }
-
-        .header-search::placeholder {
-            color: var(--text-tertiary);
-            font-size: 11px
-        }
-
-        .header-search:focus {
-            outline: none;
-            border-color: var(--yellow)
-        }
-
-        .header-lang {
-            padding: 6px 8px;
-            font-size: 11px;
-            background: var(--vessel);
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            color: var(--text)
-        }
-
-        /* Header sound toggle */
-        .header-sound-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: var(--vessel);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background .15s
-        }
-
-        .header-sound-toggle:hover {
-            background: var(--tag-bg)
-        }
-
-        .header-sound-toggle input {
-            display: none
-        }
-
-        .header-sound-toggle .sound-icon {
-            font-size: 14px;
-            opacity: 1;
-            transition: opacity .15s
-        }
-
-        .header-sound-toggle input:not(:checked)+.sound-icon {
-            opacity: 0.4
-        }
-
-        @media(max-width:520px) {
-            .header-search {
-                max-width: 80px;
-                padding: 5px 8px;
-                font-size: 11px
-            }
-
-            .header-sound-toggle {
-                width: 28px;
-                height: 28px
-            }
-
-            .header-sound-toggle .sound-icon {
-                font-size: 12px
-            }
-
-            header {
-                gap: 6px;
-                padding: 8px 10px
-            }
-
-            .title {
-                font-size: 13px
-            }
-        }
-
-        /* Runtime stats */
-        .runtime-stats {
-            display: flex;
-            gap: 6px;
-            padding: 4px 8px;
-            background: var(--vessel);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background .15s
-        }
-
-        .runtime-stats:hover {
-            background: var(--tag-bg)
-        }
-
-        .runtime-stats .stat {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            font-size: 10px;
-            color: var(--text-secondary)
-        }
-
-        .runtime-stats .stat-label {
-            font-size: 9px;
-            font-weight: 600;
-            color: var(--text-tertiary);
-            min-width: 8px
-        }
-
-        .runtime-stats .stat span:last-child {
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 10px;
-            color: var(--text)
-        }
-
-        @media(max-width:520px) {
-            .runtime-stats {
-                display: none
-            }
-        }
-
-        .pill {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 4px;
-            background: var(--tag-bg);
-            color: var(--text-secondary);
-            border: none
-        }
-
-        .pill.connected {
-            background: var(--success-bg);
-            color: var(--success)
-        }
-
-        .pill.reconnecting {
-            background: rgba(240, 185, 11, 0.1);
-            color: var(--yellow)
-        }
-
-        .pill.disconnected {
-            background: var(--error-bg);
-            color: var(--error)
-        }
-
-        .pill.stale {
-            background: var(--error-bg);
-            color: var(--error)
-        }
-
-        .pill.fresh {
-            background: var(--success-bg);
-            color: var(--success)
-        }
-
-        .pending-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px 8px;
-            font-size: 10px;
-            border-radius: 6px;
-            background: rgba(240, 185, 11, 0.15);
-            color: var(--yellow);
-            border: 1px solid rgba(240, 185, 11, 0.35);
-            font-weight: 600
-        }
-
-        .controls {
-            margin-top: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-height: 88px
-        }
-
-        .row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-            min-height: 28px
-        }
-
-        input,
-        select {
-            font-size: 13px;
-            padding: 6px 10px;
-            border: 1px solid var(--input-line);
-            border-radius: 4px;
-            background: var(--input);
-            color: var(--text);
-            outline: none
-        }
-
-        input:focus,
-        select:focus {
-            border-color: var(--yellow)
-        }
-
-        input::placeholder {
-            color: var(--text-tertiary)
-        }
-
-        select {
-            cursor: pointer
-        }
-
-        button {
-            font-size: 13px;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            background: var(--vessel);
-            color: var(--text);
-            cursor: pointer;
-            transition: background .15s
-        }
-
-        button:hover {
-            background: var(--tag-bg)
-        }
-
-        button.active {
-            background: var(--yellow);
-            color: #202630
-        }
-
-        .level-btns {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap
-        }
-
-        .level-btns button {
-            padding: 4px 8px;
-            font-size: 11px
-        }
-
-        .hint {
-            font-size: 11px;
-            color: var(--text-tertiary);
-            min-width: 100px;
-            text-align: right
-        }
-
-        .pivot-status {
-            margin-top: 8px;
-            padding: 8px 12px;
-            border-radius: 6px;
-            background: var(--card);
-            border: 1px solid var(--line);
-            font-size: 11px;
-            color: var(--text-secondary);
-            min-height: 36px
-        }
-
-        .pivot-status .row {
-            justify-content: space-between
-        }
-
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin-top: 8px;
-            min-height: 26px
-        }
-
-        .tab {
-            font-size: 11px;
-            padding: 5px 10px;
-            border-radius: 4px;
-            background: var(--vessel);
-            color: var(--text-secondary);
-            cursor: pointer;
-            border: none;
-            transition: all .15s
-        }
-
-        .tab:hover {
-            background: var(--tag-bg)
-        }
-
-        .tab.active {
-            background: var(--yellow);
-            color: #202630
-        }
-
-        .sound-toggle {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            color: var(--text-secondary)
-        }
-
-        .sound-toggle input {
-            width: 14px;
-            height: 14px;
-            accent-color: var(--yellow)
-        }
-
-        /* 滚动列表区域 */
-        .scroll-area {
-            flex: 1;
-            overflow: hidden;
-            /* 为底部 footer 留出空间 */
-            padding-bottom: calc(50px + env(safe-area-inset-bottom))
-        }
-
-        .scroll-content {
-            max-width: 860px;
-            width: 100%;
-            height: 100%;
-            margin: 0 auto;
-            padding: 0 12px 12px
-        }
-
-        /* Clusterize 容器 - 覆盖默认样式，预设高度避免 CLS */
-        .clusterize-scroll {
-            max-height: none !important;
-            height: calc(100vh - 320px);
-            min-height: 200px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch
-        }
-
-        @media(max-width:520px) {
-            .clusterize-scroll {
-                height: calc(100vh - 360px)
-            }
-        }
-
-        .clusterize-content {
-            display: flex;
-            flex-direction: column;
-            gap: 6px
-        }
-
-        .clusterize-no-data {
-            padding: 20px;
-            text-align: center;
-            color: var(--text-tertiary)
-        }
-
-        /* 信号项 - 支持动态高度 */
-        .item {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 10px 12px;
-            cursor: pointer;
-            transition: background .15s;
-            min-height: 80px;
-            box-sizing: border-box
-        }
-
-        .item:hover {
-            background: var(--vessel)
-        }
-
-        .top {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            align-items: center
-        }
-
-        .sym {
-            font-weight: 700;
-            font-size: 14px;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 6px
-        }
-
-        .symbol-link {
-            color: var(--text);
-            cursor: pointer;
-            transition: color .15s
-        }
-
-        .symbol-link:hover {
-            color: var(--yellow)
-        }
-
-        .ranks {
-            display: inline-flex;
-            gap: 4px
-        }
-
-        .rank-badge {
-            font-size: 10px;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-weight: 600
-        }
-
-        .rank-badge.vol {
-            background: rgba(240, 185, 11, 0.15);
-            color: var(--yellow)
-        }
-
-        .rank-badge.trd {
-            background: rgba(46, 189, 133, 0.15);
-            color: var(--buy)
-        }
-
-        .tags {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            justify-content: flex-end
-        }
-
-        .tag {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            background: var(--vessel);
-            color: var(--text)
-        }
-
-        .tag.up {
-            background: rgba(46, 189, 133, 0.2);
-            color: var(--buy)
-        }
-
-        .tag.down {
-            background: rgba(246, 70, 93, 0.2);
-            color: var(--sell)
-        }
-
-        .sub {
-            margin-top: 6px;
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            font-size: 12px;
-            color: var(--text-secondary)
-        }
-
-        .muted {
-            color: var(--text-tertiary)
-        }
-
-        .price-info {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            font-size: 12px;
-            margin-top: 4px
-        }
-
-        .price-now {
-            color: var(--text);
-            font-weight: 600
-        }
-
-        .price-pct {
-            font-size: 11px
-        }
-
-        .price-pct.up {
-            color: var(--buy)
-        }
-
-        .price-pct.down {
-            color: var(--sell)
-        }
-
-        .price-diff {
-            font-size: 12px;
-            padding: 1px 6px;
-            border-radius: 3px;
-            margin-left: 6px
-        }
-
-        .price-diff.up {
-            color: var(--buy);
-            background: var(--buy-bg)
-        }
-
-        .price-diff.down {
-            color: var(--sell);
-            background: var(--sell-bg)
-        }
-
-        .trades,
-        .volume {
-            font-size: 11px;
-            color: var(--text-tertiary)
-        }
-
-        /* 排行榜项 - 固定高度避免 CLS */
-        .ranking-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background .15s;
-            height: 50px;
-            min-height: 50px;
-            max-height: 50px;
-            box-sizing: border-box
-        }
-
-        .ranking-item:hover {
-            background: var(--vessel)
-        }
-
-        .ranking-rank {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--yellow);
-            min-width: 28px
-        }
-
-        .ranking-rank.top3 {
-            color: var(--buy)
-        }
-
-        .ranking-symbol {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text);
-            flex: 1
-        }
-
-        .ranking-value {
-            font-size: 12px;
-            color: var(--text-secondary)
-        }
-
-        .rank-change {
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-            min-width: 36px;
-            text-align: center
-        }
-
-        .rank-change.up {
-            color: var(--buy);
-            background: var(--buy-bg)
-        }
-
-        .rank-change.down {
-            color: var(--sell);
-            background: var(--sell-bg)
-        }
-
-        .rank-change.new {
-            color: var(--yellow);
-            background: rgba(240, 185, 11, 0.15);
-            font-size: 10px
-        }
-
-        .ranking-item .price-pct {
-            font-size: 11px;
-            min-width: 50px;
-            text-align: right
-        }
-
-        /* Ranking Modal Styles */
-        .ranking-modal-current {
-            padding: 8px 12px;
-            background: var(--vessel);
-            border-radius: 6px;
-            margin-bottom: 12px;
-            font-size: 12px
-        }
-
-        .ranking-modal-current .current-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 0
-        }
-
-        .ranking-modal-current .current-label {
-            color: var(--text-secondary)
-        }
-
-        .ranking-modal-current .current-value {
-            color: var(--text);
-            font-weight: 600
-        }
-
-        .ranking-chart-section {
-            margin-bottom: 12px
-        }
-
-        .ranking-chart-section .chart-title {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-bottom: 4px
-        }
-
-        .ranking-chart-section canvas {
-            width: 100%;
-            height: 80px;
-            background: var(--vessel);
-            border-radius: 4px
-        }
-
-        /* 操作菜单 */
-        .action-menu {
-            position: fixed;
-            z-index: 1000;
-            background: var(--popup);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 6px 0;
-            min-width: 180px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            display: none
-        }
-
-        .action-menu.show {
-            display: block
-        }
-
-        .action-menu-item {
-            padding: 10px 16px;
-            font-size: 13px;
-            color: var(--text);
-            cursor: pointer;
-            transition: background .15s
-        }
-
-        .action-menu-item:hover {
-            background: var(--vessel)
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--popup);
-            color: var(--text);
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 13px;
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity .2s;
-            pointer-events: none
-        }
-
-        .toast.show {
-            opacity: 1
-        }
-
-        /* 新信号提示条 */
-        .new-signal-banner {
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 8px 12px;
-            margin: 8px 0;
-            border-radius: 8px;
-            border: 1px solid rgba(240, 185, 11, 0.35);
-            background: linear-gradient(90deg, rgba(240, 185, 11, 0.16), rgba(240, 185, 11, 0.04));
-            color: var(--text);
-            font-size: 12px;
-            box-shadow: var(--shadow-1)
-        }
-
-        .new-signal-banner .banner-left {
-            display: flex;
-            align-items: center;
-            gap: 8px
-        }
-
-        .new-signal-banner .pulse-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--yellow);
-            box-shadow: 0 0 0 0 rgba(240, 185, 11, 0.6);
-            animation: pulse 1.6s ease-out infinite
-        }
-
-        .new-signal-banner .banner-text {
-            color: var(--text);
-            font-weight: 600
-        }
-
-        .new-signal-banner .banner-btn {
-            background: var(--yellow);
-            color: #202630;
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 12px;
-            font-weight: 600
-        }
-
-        .new-signal-banner .banner-btn:hover {
-            background: var(--btn-bg)
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(240, 185, 11, 0.5)
-            }
-
-            70% {
-                box-shadow: 0 0 0 8px rgba(240, 185, 11, 0)
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(240, 185, 11, 0)
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .pulse-dot {
-                animation: none
-            }
-        }
-
-        /* 小输入框 */
-        .input-sm {
-            width: 70px;
-            padding: 5px 8px;
-            font-size: 12px
-        }
-
-        /* 成交额过滤 */
-        .volume-filter {
-            display: inline-flex;
-            gap: 2px;
-            align-items: center
-        }
-
-        .volume-filter .input-sm {
-            width: 50px
-        }
-
-        .select-sm {
-            padding: 5px 4px;
-            font-size: 12px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--text-primary)
-        }
-
-        @media(max-width:520px) {
-            .price-info {
-                flex-wrap: wrap;
-                gap: 6px
-            }
-
-            .input-sm {
-                width: 60px
-            }
-
-            .volume-filter .input-sm {
-                width: 45px
-            }
-        }
-
-        /* Pattern item styles */
-        .pattern-item .tags .rate {
-            font-weight: bold;
-            min-width: 40px;
-            text-align: center
-        }
-
-        .pattern-item .efficiency {
-            font-size: 11px;
-            color: var(--text-tertiary);
-            margin-right: 8px
-        }
-
-        .pattern-item .source-tag {
-            font-size: 10px;
-            padding: 1px 4px;
-            border-radius: 3px;
-            background: var(--vessel);
-            color: var(--text-tertiary)
-        }
-
-        /* Pattern badge on pivot signals */
-        .pattern-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 2px;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 500;
-            white-space: nowrap
-        }
-
-        .pattern-badge.bullish {
-            background: var(--buy-bg);
-            color: var(--buy);
-            border: 1px solid rgba(46, 189, 133, 0.3)
-        }
-
-        .pattern-badge.bearish {
-            background: var(--sell-bg);
-            color: var(--sell);
-            border: 1px solid rgba(246, 70, 93, 0.3)
-        }
-
-        .pattern-badge.neutral {
-            background: var(--vessel);
-            color: var(--text-secondary);
-            border: 1px solid var(--line)
-        }
-
-        /* Pattern detail modal */
-        .pattern-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000
-        }
-
-        /* K 线预览弹窗 */
-        .kline-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(2, 6, 23, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2200
-        }
-
-        .kline-modal-content {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            width: 680px;
-            max-width: 94vw;
-            box-shadow: var(--shadow-1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden
-        }
-
-        .kline-toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            background: var(--vessel);
-            border-bottom: 1px solid var(--line);
-            flex-wrap: wrap
-        }
-
-        .kline-toolbar .kline-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text)
-        }
-
-        .kline-intervals {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap
-        }
-
-        .kline-intervals button {
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            background: var(--card);
-            color: var(--text-secondary);
-            border: 1px solid var(--line);
-            cursor: pointer;
-            transition: all .15s
-        }
-
-        .kline-intervals button.active {
-            background: var(--yellow);
-            color: #202630;
-            border-color: transparent
-        }
-
-        .kline-chart {
-            position: relative;
-            height: 280px;
-            padding: 8px 12px 4px;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.35), transparent)
-        }
-
-        #klineCanvas {
-            width: 100%;
-            height: 100%;
-            display: block
-        }
-
-        .kline-loading {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-tertiary);
-            font-size: 12px;
-            background: rgba(32, 38, 48, 0.65);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .2s
-        }
-
-        .kline-loading.show {
-            opacity: 1;
-            pointer-events: auto
-        }
-
-        .kline-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 14px 12px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            border-top: 1px solid var(--line);
-            background: var(--card)
-        }
-
-        .kline-meta {
-            color: var(--text);
-            font-weight: 600
-        }
-
-        .kline-hint {
-            color: var(--text-tertiary)
-        }
-
-        @media(max-width:520px) {
-            .kline-modal-content {
-                width: 96vw
-            }
-
-            .kline-chart {
-                height: 220px
-            }
-
-            .kline-footer {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 4px
-            }
-        }
-
-        .pattern-modal-content {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            width: 320px;
-            max-width: 90vw
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--line)
-        }
-
-        .modal-header .symbol {
-            font-weight: 700;
-            font-size: 14px;
-            color: var(--text)
-        }
-
-        .modal-header .pattern-name {
-            font-size: 13px;
-            color: var(--yellow)
-        }
-
-        .modal-header .close-btn {
-            margin-left: auto;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 0 4px
-        }
-
-        .modal-header .close-btn:hover {
-            color: var(--text)
-        }
-
-        .modal-body {
-            padding: 12px 16px
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--line)
-        }
-
-        .stat-row:last-child {
-            border-bottom: none
-        }
-
-        .stat-row .label {
-            font-size: 12px;
-            color: var(--text-secondary)
-        }
-
-        .stat-row .value {
-            font-size: 12px;
-            color: var(--text);
-            font-weight: 500
-        }
-
-        .stat-row .value.bullish {
-            color: var(--buy)
-        }
-
-        .stat-row .value.bearish {
-            color: var(--sell)
-        }
-
-        .stat-row .bar {
-            width: 60px;
-            height: 6px;
-            background: var(--vessel);
-            border-radius: 3px;
-            margin-left: 8px
-        }
-
-        .stat-row .bar .fill {
-            height: 100%;
-            border-radius: 3px
-        }
-
-        .stat-row .bar .fill.up {
-            background: var(--buy)
-        }
-
-        .stat-row .bar .fill.down {
-            background: var(--sell)
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 8px;
-            padding: 12px 16px;
-            border-top: 1px solid var(--line)
-        }
-
-        .modal-footer button {
-            flex: 1;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-            border: none
-        }
-
-        .modal-footer .btn-trade {
-            background: var(--yellow);
-            color: #202630
-        }
-
-        .modal-footer .btn-filter {
-            background: var(--vessel);
-            color: var(--text)
-        }
-
-        /* Efficiency rank colors */
-        .efficiency-A {
-            color: #22c55e !important
-        }
-
-        .efficiency-B {
-            color: #84cc16 !important
-        }
-
-        .efficiency-C {
-            color: #eab308 !important
-        }
-
-        .efficiency-D {
-            color: #f97316 !important
-        }
-
-        .efficiency-E {
-            color: #ef4444 !important
-        }
-
-        @media(max-width:480px) {
-            .pattern-item .tags .rate {
-                font-size: 11px;
-                min-width: 36px
-            }
-
-            .pattern-badge {
-                font-size: 9px;
-                padding: 1px 4px
-            }
-
-            .pattern-modal-content {
-                width: 95vw;
-                margin: 10px
-            }
-        }
-
-        /* Pivot Preview Modal */
-        .pivot-period-toggle {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 8px
-        }
-
-        .pivot-period-btn {
-            flex: 1;
-            padding: 6px 12px;
-            font-size: 12px;
-            border: 1px solid var(--line);
-            background: var(--vessel);
-            color: var(--text-secondary);
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all .15s
-        }
-
-        .pivot-period-btn.active {
-            background: var(--yellow);
-            color: #202630;
-            border-color: var(--yellow)
-        }
-
-        .pivot-levels-list {
-            max-height: 400px;
-            overflow-y: auto
-        }
-
-        .pivot-level {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 8px;
-            border-radius: 4px;
-            margin-bottom: 2px;
-            font-size: 12px
-        }
-
-        .pivot-level.resistance {
-            background: rgba(246, 70, 93, 0.1)
-        }
-
-        .pivot-level.support {
-            background: rgba(46, 189, 133, 0.1)
-        }
-
-        .pivot-level.pivot-point {
-            background: rgba(240, 185, 11, 0.15)
-        }
-
-        .pivot-level.current-price {
-            background: var(--yellow);
-            color: #202630;
-            font-weight: 600
-        }
-
-        .pivot-level .level-name {
-            font-weight: 600;
-            min-width: 30px
-        }
-
-        .pivot-level .level-price {
-            flex: 1;
-            text-align: right;
-            margin-right: 8px;
-            font-family: 'SF Mono', Monaco, monospace
-        }
-
-        .pivot-level .level-pct {
-            min-width: 60px;
-            text-align: right;
-            font-family: 'SF Mono', Monaco, monospace
-        }
-
-        .pivot-level .level-pct.pct-up {
-            color: var(--buy)
-        }
-
-        .pivot-level .level-pct.pct-down {
-            color: var(--sell)
-        }
-
-        /* Pivot level display in signal items */
-        .pivot-up {
-            color: var(--sell);
-            font-size: 11px
-        }
-
-        .pivot-down {
-            color: var(--buy);
-            font-size: 11px
-        }
-
-        .pivot-info {
-            display: flex;
-            gap: 8px;
-            margin-top: 4px;
-            font-size: 11px
-        }
-
-        /* Pivot levels row in signal items */
-        .pivot-levels-row {
-            display: flex;
-            gap: 12px;
-            margin-top: 4px;
-            font-size: 11px;
-            flex-wrap: wrap
-        }
-
-        .pivot-levels-row:empty {
-            display: none
-        }
-
-        header,
-        .pivot-status,
-        .item,
-        .ranking-item,
-        .panel {
-            box-shadow: var(--shadow-1);
-            border-color: rgba(255, 255, 255, 0.06)
-        }
-
-        .pivot-pair {
-            display: inline-flex;
-            gap: 6px
-        }
-
-        /* 底部系统信息栏 */
-        .footer-stats {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--bg);
-            border-top: 1px solid var(--line);
-            padding: 8px 12px;
-            /* iOS safe area 底部填充 */
-            padding-bottom: calc(8px + env(safe-area-inset-bottom));
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 11px;
-            color: var(--text-secondary);
-            z-index: 100
-        }
-
-        .footer-stats .stat-group {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap
-        }
-
-        .footer-stats .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 4px
-        }
-
-        .footer-stats .stat-label {
-            color: var(--text-tertiary)
-        }
-
-        .footer-stats .stat-value {
-            color: var(--text);
-            font-weight: 500
-        }
-
-        .footer-stats .version {
-            color: var(--text-tertiary);
-            font-size: 10px
-        }
-
-        @media(max-width:520px) {
-            .footer-stats {
-                flex-direction: column;
-                gap: 4px;
-                padding: 6px 8px;
-                padding-bottom: calc(6px + env(safe-area-inset-bottom))
-            }
-
-            .footer-stats .stat-group {
-                gap: 10px
-            }
-        }
-
-        /* ==================== 宽屏多面板布局 ==================== */
-        /* 多面板容器 - 默认隐藏 */
-        .multi-panel-container {
-            display: none
-        }
-
-        /* 宽屏模式激活 (>1200px) */
-        @media (min-width: 1201px) {
-
-            /* 隐藏原有的 tab 按钮和单面板滚动区域 */
-            .tabs {
-                display: none !important
-            }
-
-            .scroll-area {
-                display: none !important
-            }
-
-            /* 调整 header-area 最大宽度 */
-            .header-area {
-                max-width: 1800px
-            }
-
-            /* 显示多面板容器 */
-            .multi-panel-container {
-                display: flex;
-                flex: 1;
-                gap: 12px;
-                padding: 0 12px 12px;
-                overflow: hidden;
-                max-width: 1800px;
-                margin: 0 auto;
-                width: 100%;
-                /* 为底部 footer 留出空间 */
-                padding-bottom: calc(50px + env(safe-area-inset-bottom))
-            }
-
-            /* 单个面板 */
-            .panel {
-                flex: 1;
-                min-width: 300px;
-                display: flex;
-                flex-direction: column;
-                background: var(--card);
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                overflow: hidden
-            }
-
-            /* 面板头部 */
-            .panel-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 12px;
-                background: var(--vessel);
-                border-bottom: 1px solid var(--line);
-                flex-shrink: 0
-            }
-
-            .panel-title {
-                font-weight: 600;
-                font-size: 13px;
-                color: var(--text)
-            }
-
-            .panel-count {
-                font-size: 11px;
-                color: var(--text-secondary);
-                background: var(--tag-bg);
-                padding: 2px 8px;
-                border-radius: 4px
-            }
-
-            /* 面板滚动区域 */
-            .panel-scroll {
-                flex: 1;
-                overflow-y: auto;
-                overflow-x: hidden;
-                -webkit-overflow-scrolling: touch;
-                max-height: none !important;
-                height: auto !important
-            }
-
-            .panel-scroll .clusterize-content {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-                padding: 8px
-            }
-
-            /* 面板过滤控件 */
-            .panel-filters {
-                display: flex;
-                gap: 4px;
-                padding: 6px 8px;
-                background: var(--bg);
-                border-bottom: 1px solid var(--line);
-                flex-shrink: 0;
-                flex-wrap: wrap
-            }
-
-            .panel-select {
-                padding: 4px 6px;
-                font-size: 11px;
-                background: var(--vessel);
-                border: 1px solid var(--line);
-                border-radius: 4px;
-                color: var(--text);
-                cursor: pointer;
-                flex: 1;
-                min-width: 60px
-            }
-
-            .panel-select:focus {
-                outline: none;
-                border-color: var(--yellow)
-            }
-        }
-    </style>
+    
 </head>
 
 <body>
@@ -1586,76 +49,137 @@
             </label>
             <span id="status" class="pill" data-i18n="status_disconnected">未连接</span>
             <span id="pendingBadge" class="pending-badge" style="display:none">-</span>
+            <button id="filterToggle" type="button" class="filter-toggle" data-i18n="btn_filter_short"
+                data-i18n-title="btn_filter_collapse" aria-expanded="true">筛选</button>
             <button id="refresh" type="button" data-i18n="btn_refresh">刷新</button>
         </header>
-        <div class="pivot-status">
-            <div class="row">
-                <div><strong data-i18n="label_daily">日</strong>: <span id="dailyStatus">-</span></div>
-                <div><strong data-i18n="label_weekly">周</strong>: <span id="weeklyStatus">-</span></div>
+        <div id="filterSection" class="filter-section">
+            <div class="pivot-status">
+                <div class="row">
+                    <div><strong data-i18n="label_daily">日</strong>: <span id="dailyStatus">-</span></div>
+                    <div><strong data-i18n="label_weekly">周</strong>: <span id="weeklyStatus">-</span></div>
+                </div>
             </div>
-        </div>
-        <div class="controls">
-            <div class="row">
-                <select id="period">
-                    <option value="" data-i18n="option_all">全部</option>
-                    <option value="1d">1d</option>
-                    <option value="1w">1w</option>
-                </select>
-                <select id="direction">
-                    <option value="" data-i18n="option_all">全部</option>
-                    <option value="up" data-i18n="option_up">上涨</option>
-                    <option value="down" data-i18n="option_down">下跌</option>
-                </select>
-                <select id="limit">
-                    <option value="500">500</option>
-                    <option value="1000" selected>1000</option>
-                    <option value="2000">2000</option>
-                    <option value="5000">5000</option>
-                    <option value="10000">10000</option>
-                </select>
-                <input id="minDiff" type="number" class="input-sm" placeholder="差值%"
-                    data-i18n-placeholder="placeholder_diff" min="0" step="0.1" />
-                <div class="volume-filter">
-                    <input id="minVolume" type="number" class="input-sm" placeholder="成交额"
-                        data-i18n-placeholder="placeholder_vol" min="0" step="1" />
-                    <select id="volumeUnit" class="select-sm">
-                        <option value="M" selected>M</option>
-                        <option value="K">K</option>
-                        <option value="B">B</option>
+            <div class="controls">
+                <div class="row">
+                    <select id="period">
+                        <option value="" data-i18n="option_all">全部</option>
+                        <option value="1d">1d</option>
+                        <option value="1w">1w</option>
                     </select>
+                    <select id="direction">
+                        <option value="" data-i18n="option_all">全部</option>
+                        <option value="up" data-i18n="option_up">上涨</option>
+                        <option value="down" data-i18n="option_down">下跌</option>
+                    </select>
+                    <select id="limit">
+                        <option value="500">500</option>
+                        <option value="1000" selected>1000</option>
+                        <option value="2000">2000</option>
+                        <option value="5000">5000</option>
+                        <option value="10000">10000</option>
+                    </select>
+                    <input id="minDiff" type="number" class="input-sm" placeholder="差值%"
+                        data-i18n-placeholder="placeholder_diff" min="0" step="0.1" />
+                    <div class="volume-filter">
+                        <input id="minVolume" type="number" class="input-sm" placeholder="成交额"
+                            data-i18n-placeholder="placeholder_vol" min="0" step="1" />
+                        <select id="volumeUnit" class="select-sm">
+                            <option value="M" selected>M</option>
+                            <option value="K">K</option>
+                            <option value="B">B</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <span style="font-size:11px;color:var(--text-secondary)" data-i18n="label_levels">点位</span>
+                    <div class="level-btns" id="filterLevels">
+                        <button type="button" data-level="PP">PP</button>
+                        <button type="button" data-level="R1">R1</button>
+                        <button type="button" data-level="R2">R2</button>
+                        <button type="button" data-level="R3">R3</button>
+                        <button type="button" data-level="R4">R4</button>
+                        <button type="button" data-level="R5">R5</button>
+                        <button type="button" data-level="S1">S1</button>
+                        <button type="button" data-level="S2">S2</button>
+                        <button type="button" data-level="S3">S3</button>
+                        <button type="button" data-level="S4">S4</button>
+                        <button type="button" data-level="S5">S5</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <span style="font-size:11px;color:var(--text-secondary)" data-i18n="label_sound">提示音</span>
+                    <div class="level-btns" id="soundLevels">
+                        <button type="button" data-level="PP">PP</button>
+                        <button type="button" data-level="R1">R1</button>
+                        <button type="button" data-level="R2">R2</button>
+                        <button type="button" data-level="R3">R3</button>
+                        <button type="button" data-level="R4">R4</button>
+                        <button type="button" data-level="R5">R5</button>
+                        <button type="button" data-level="S1">S1</button>
+                        <button type="button" data-level="S2">S2</button>
+                        <button type="button" data-level="S3">S3</button>
+                        <button type="button" data-level="S4">S4</button>
+                        <button type="button" data-level="S5">S5</button>
+                    </div>
                 </div>
             </div>
-            <div class="row">
-                <span style="font-size:11px;color:var(--text-secondary)" data-i18n="label_levels">点位</span>
-                <div class="level-btns" id="filterLevels">
-                    <button type="button" data-level="PP">PP</button>
-                    <button type="button" data-level="R1">R1</button>
-                    <button type="button" data-level="R2">R2</button>
-                    <button type="button" data-level="R3">R3</button>
-                    <button type="button" data-level="R4">R4</button>
-                    <button type="button" data-level="R5">R5</button>
-                    <button type="button" data-level="S1">S1</button>
-                    <button type="button" data-level="S2">S2</button>
-                    <button type="button" data-level="S3">S3</button>
-                    <button type="button" data-level="S4">S4</button>
-                    <button type="button" data-level="S5">S5</button>
-                </div>
+            <!-- Pattern filters (hidden by default) -->
+            <div id="patternFilters" class="row" style="margin-top:6px;display:none">
+                <select id="patternType">
+                    <option value="" data-i18n="pattern_all">全部形态</option>
+                    <optgroup label="高效率 (A/B)" data-i18n-label="pattern_efficiency_high">
+                        <option value="engulfing">吞没形态 (67%)</option>
+                        <option value="morning_star">晨星 (70%)</option>
+                        <option value="evening_star">暮星 (72%)</option>
+                        <option value="three_black">三只乌鸦 (78%)</option>
+                        <option value="dark_cloud_cover">乌云盖顶 (70%)</option>
+                        <option value="hammer">锤子线 (60%)</option>
+                        <option value="shooting_star">流星线 (62%)</option>
+                    </optgroup>
+                    <optgroup label="中效率 (C/D)" data-i18n-label="pattern_efficiency_medium">
+                        <option value="three_white">三白兵 (82%)</option>
+                        <option value="harami">孕线 (53%)</option>
+                        <option value="doji">十字星 (57%)</option>
+                    </optgroup>
+                </select>
+                <select id="efficiencyRank">
+                    <option value="" data-i18n="pattern_rank_all">全部等级</option>
+                    <option value="A" data-i18n="pattern_rank_a">A (最高)</option>
+                    <option value="B" data-i18n="pattern_rank_b">B (较高)</option>
+                    <option value="C" data-i18n="pattern_rank_c">C (中等)</option>
+                    <option value="D" data-i18n="pattern_rank_d">D (较低)</option>
+                </select>
+                <select id="patternDirection">
+                    <option value="" data-i18n="pattern_direction_all">全部方向</option>
+                    <option value="bullish" data-i18n="pattern_direction_bullish">看涨 ↑</option>
+                    <option value="bearish" data-i18n="pattern_direction_bearish">看跌 ↓</option>
+                </select>
             </div>
-            <div class="row">
-                <span style="font-size:11px;color:var(--text-secondary)" data-i18n="label_sound">提示音</span>
-                <div class="level-btns" id="soundLevels">
-                    <button type="button" data-level="PP">PP</button>
-                    <button type="button" data-level="R1">R1</button>
-                    <button type="button" data-level="R2">R2</button>
-                    <button type="button" data-level="R3">R3</button>
-                    <button type="button" data-level="R4">R4</button>
-                    <button type="button" data-level="R5">R5</button>
-                    <button type="button" data-level="S1">S1</button>
-                    <button type="button" data-level="S2">S2</button>
-                    <button type="button" data-level="S3">S3</button>
-                    <button type="button" data-level="S4">S4</button>
-                    <button type="button" data-level="S5">S5</button>
-                </div>
+            <!-- Ranking filters (hidden by default) -->
+            <div id="rankingFilters" class="row" style="margin-top:6px;display:none">
+                <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_compare">对比</span>
+                <select id="rankingCompare">
+                    <option value="" data-i18n="ranking_prev">上一快照</option>
+                    <option value="5m" data-i18n="ranking_5m">5分钟</option>
+                    <option value="15m" data-i18n="ranking_15m">15分钟</option>
+                    <option value="30m" data-i18n="ranking_30m">30分钟</option>
+                    <option value="1h" data-i18n="ranking_1h">1小时</option>
+                    <option value="6h" data-i18n="ranking_6h">6小时</option>
+                    <option value="24h" data-i18n="ranking_24h">24小时</option>
+                </select>
+                <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_sort">排序</span>
+                <select id="rankingSort">
+                    <option value="default" data-i18n="ranking_sort_default">默认</option>
+                    <option value="rank" data-i18n="ranking_sort_rank">排名</option>
+                    <option value="growth" data-i18n="ranking_sort_growth">增长%</option>
+                </select>
+                <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_sort_order">顺序</span>
+                <select id="rankingSortOrder">
+                    <option value="asc" data-i18n="ranking_order_asc">正序</option>
+                    <option value="desc" data-i18n="ranking_order_desc">倒序</option>
+                </select>
+                <button id="rankingRefresh" type="button" data-i18n="btn_refresh">刷新</button>
             </div>
         </div>
         <div class="row" style="margin-top:6px;justify-content:space-between">
@@ -1666,63 +190,6 @@
                 <button class="tab" data-view="trades" data-i18n="tab_trades">成交笔数</button>
             </div>
             <div id="hint" class="hint" data-i18n="hint_signals">信号: -/-</div>
-        </div>
-        <!-- Pattern filters (hidden by default) -->
-        <div id="patternFilters" class="row" style="margin-top:6px;display:none">
-            <select id="patternType">
-                <option value="" data-i18n="pattern_all">全部形态</option>
-                <optgroup label="高效率 (A/B)" data-i18n-label="pattern_efficiency_high">
-                    <option value="engulfing">吞没形态 (67%)</option>
-                    <option value="morning_star">晨星 (70%)</option>
-                    <option value="evening_star">暮星 (72%)</option>
-                    <option value="three_black">三只乌鸦 (78%)</option>
-                    <option value="dark_cloud_cover">乌云盖顶 (70%)</option>
-                    <option value="hammer">锤子线 (60%)</option>
-                    <option value="shooting_star">流星线 (62%)</option>
-                </optgroup>
-                <optgroup label="中效率 (C/D)" data-i18n-label="pattern_efficiency_medium">
-                    <option value="three_white">三白兵 (82%)</option>
-                    <option value="harami">孕线 (53%)</option>
-                    <option value="doji">十字星 (57%)</option>
-                </optgroup>
-            </select>
-            <select id="efficiencyRank">
-                <option value="" data-i18n="pattern_rank_all">全部等级</option>
-                <option value="A" data-i18n="pattern_rank_a">A (最高)</option>
-                <option value="B" data-i18n="pattern_rank_b">B (较高)</option>
-                <option value="C" data-i18n="pattern_rank_c">C (中等)</option>
-                <option value="D" data-i18n="pattern_rank_d">D (较低)</option>
-            </select>
-            <select id="patternDirection">
-                <option value="" data-i18n="pattern_direction_all">全部方向</option>
-                <option value="bullish" data-i18n="pattern_direction_bullish">看涨 ↑</option>
-                <option value="bearish" data-i18n="pattern_direction_bearish">看跌 ↓</option>
-            </select>
-        </div>
-        <!-- Ranking filters (hidden by default) -->
-        <div id="rankingFilters" class="row" style="margin-top:6px;display:none">
-            <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_compare">对比</span>
-            <select id="rankingCompare">
-                <option value="" data-i18n="ranking_prev">上一快照</option>
-                <option value="5m" data-i18n="ranking_5m">5分钟</option>
-                <option value="15m" data-i18n="ranking_15m">15分钟</option>
-                <option value="30m" data-i18n="ranking_30m">30分钟</option>
-                <option value="1h" data-i18n="ranking_1h">1小时</option>
-                <option value="6h" data-i18n="ranking_6h">6小时</option>
-                <option value="24h" data-i18n="ranking_24h">24小时</option>
-            </select>
-            <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_sort">排序</span>
-            <select id="rankingSort">
-                <option value="default" data-i18n="ranking_sort_default">默认</option>
-                <option value="rank" data-i18n="ranking_sort_rank">排名</option>
-                <option value="growth" data-i18n="ranking_sort_growth">增长%</option>
-            </select>
-            <span style="font-size:11px;color:var(--text-secondary)" data-i18n="ranking_sort_order">顺序</span>
-            <select id="rankingSortOrder">
-                <option value="asc" data-i18n="ranking_order_asc">正序</option>
-                <option value="desc" data-i18n="ranking_order_desc">倒序</option>
-            </select>
-            <button id="rankingRefresh" type="button" data-i18n="btn_refresh">刷新</button>
         </div>
     </div>
     <!-- 宽屏多面板容器 (PC widescreen mode) -->
@@ -1867,6 +334,7 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <button id="modalKlineBtn" class="btn-kline" data-i18n="btn_kline">K线</button>
                 <button id="modalTradeBtn" class="btn-trade" data-i18n="btn_trade">交易</button>
                 <button id="modalFilterBtn" class="btn-filter" data-i18n="btn_filter">筛选</button>
             </div>
@@ -1876,6 +344,7 @@
     <div id="actionMenu" class="action-menu">
         <div class="action-menu-item" data-action="trade" data-i18n="action_jump_trade">🚀 跳转交易</div>
         <div class="action-menu-item" data-action="pivots" data-i18n="action_pivot_levels">📊 枢轴点位</div>
+        <div class="action-menu-item" data-action="position" data-i18n="action_position_calc">⚖️ 仓位计算</div>
         <div class="action-menu-item" data-action="kline" data-i18n="action_kline_preview">K线预览</div>
         <div class="action-menu-item" data-action="copy" data-i18n="action_copy_symbol">📋 复制币种</div>
         <div class="action-menu-item" data-action="filter" data-i18n="action_filter_symbol">🔍 筛选币种</div>
@@ -1898,6 +367,83 @@
                         data-i18n="pivot_period_week">周线</button>
                 </div>
                 <div id="pivotLevelsList" class="pivot-levels-list"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Position Calculator Modal -->
+    <div id="positionModal" class="pattern-modal" style="display:none">
+        <div class="position-modal-content">
+            <div class="modal-header">
+                <span id="positionSymbol" class="symbol"></span>
+                <span class="pattern-name" data-i18n="position_title">仓位计算</span>
+                <button class="close-btn" onclick="hidePositionModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="position-form">
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="position_direction">方向</span>
+                        <div class="position-segment" id="positionSide">
+                            <button type="button" data-side="long" class="active" data-i18n="position_long">做多</button>
+                            <button type="button" data-side="short" data-i18n="position_short">做空</button>
+                        </div>
+                    </div>
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="position_level">参考点位</span>
+                        <div class="position-field">
+                            <select id="positionLevelSelect"></select>
+                            <input id="positionLevelCustom" type="number" class="input-sm" placeholder="自定义价"
+                                data-i18n-placeholder="position_custom_price" style="display:none"
+                                inputmode="decimal" />
+                        </div>
+                    </div>
+                    <div class="position-hint" id="positionDiff">-</div>
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="position_offset">偏移%</span>
+                        <input id="positionOffset" type="number" class="input-sm" min="-20" step="0.1" value="0"
+                            inputmode="decimal" />
+                    </div>
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="position_stop_pct">止损比例</span>
+                        <input id="positionStopPct" type="number" class="input-sm" min="0" step="0.1"
+                            placeholder="%" inputmode="decimal" />
+                    </div>
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="position_stop_price">止损价格</span>
+                        <input id="positionStopPrice" type="number" class="input-sm" min="0" step="0.0001"
+                            placeholder="-" inputmode="decimal" />
+                    </div>
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="position_max_loss">最大亏损</span>
+                        <div class="position-field">
+                            <input id="positionMaxLoss" type="number" class="input-sm" min="0" step="1"
+                                value="10" inputmode="decimal" />
+                            <span class="position-unit">USDT</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="position-summary">
+                    <div class="stat-row">
+                        <span class="label" data-i18n="position_entry">开仓价</span>
+                        <span id="positionEntry" class="value copyable">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label" data-i18n="position_stop">止损价</span>
+                        <span id="positionStop" class="value copyable">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label" data-i18n="position_risk">风险距离</span>
+                        <span id="positionRisk" class="value">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label" data-i18n="position_size">仓位大小</span>
+                        <span id="positionSize" class="value">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label" data-i18n="position_notional">数量</span>
+                        <span id="positionNotional" class="value">-</span>
+                    </div>
+                </div>
+                <div id="positionError" class="position-error" style="display:none"></div>
             </div>
         </div>
     </div>
@@ -1925,6 +471,7 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <button id="rankingModalKlineBtn" class="btn-kline" data-i18n="btn_kline">K线</button>
                 <button id="rankingModalTradeBtn" class="btn-trade" data-i18n="btn_trade">交易</button>
                 <button id="rankingModalFilterBtn" class="btn-filter" data-i18n="btn_filter">筛选</button>
             </div>

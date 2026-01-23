@@ -73,12 +73,39 @@
             modal_detected: "发现时间",
             btn_trade: "交易",
             btn_filter: "筛选",
+            btn_kline: "K线",
+            btn_filter_short: "筛选",
+            btn_filter_collapse: "收起筛选",
+            btn_filter_expand: "展开筛选",
             action_jump_trade: "🚀 跳转交易",
             action_pivot_levels: "📊 枢轴点位",
+            action_position_calc: "⚖️ 仓位计算",
             action_copy_symbol: "📋 复制币种",
             action_filter_symbol: "🔍 筛选币种",
             action_show_signals: "📊 查看信号",
             action_kline_preview: "K线预览",
+            position_title: "仓位计算",
+            position_direction: "方向",
+            position_long: "做多",
+            position_short: "做空",
+            position_level: "参考点位",
+            position_custom_price: "自定义价",
+            position_offset: "偏移%",
+            position_stop_pct: "止损比例",
+            position_stop_price: "止损价格",
+            position_max_loss: "最大亏损",
+            position_entry: "开仓价",
+            position_stop: "止损价",
+            position_risk: "风险距离",
+            position_size: "仓位大小",
+            position_notional: "数量",
+            position_diff: "当前价 {current} · 点位 {level} · 差 {diff}",
+            position_error_no_price: "暂无当前价格",
+            position_error_no_level: "请选择有效点位或自定义价",
+            position_error_no_stop: "请填写止损比例或止损价格",
+            position_error_invalid_stop: "止损价方向不正确",
+            position_error_max_loss: "最大亏损需大于 0",
+            toast_copied_value: "已复制: {value}",
             panel_signals: "信号",
             panel_volume: "成交额",
             panel_trades: "成交笔数",
@@ -220,12 +247,39 @@
             modal_detected: "Detected At",
             btn_trade: "Trade",
             btn_filter: "Filter",
+            btn_kline: "Kline",
+            btn_filter_short: "Filters",
+            btn_filter_collapse: "Hide Filters",
+            btn_filter_expand: "Show Filters",
             action_jump_trade: "🚀 Jump to Trade",
             action_pivot_levels: "📊 Pivot Levels",
+            action_position_calc: "⚖️ Position Calc",
             action_copy_symbol: "📋 Copy Symbol",
             action_filter_symbol: "🔍 Filter Symbol",
             action_show_signals: "📊 Show Signals",
             action_kline_preview: "Kline Preview",
+            position_title: "Position Calc",
+            position_direction: "Direction",
+            position_long: "Long",
+            position_short: "Short",
+            position_level: "Reference",
+            position_custom_price: "Custom price",
+            position_offset: "Offset %",
+            position_stop_pct: "Stop %",
+            position_stop_price: "Stop Price",
+            position_max_loss: "Max Loss",
+            position_entry: "Entry",
+            position_stop: "Stop",
+            position_risk: "Risk Distance",
+            position_size: "Position Size",
+            position_notional: "Quantity",
+            position_diff: "Current {current} · Level {level} · Diff {diff}",
+            position_error_no_price: "No current price",
+            position_error_no_level: "Select a valid level or custom price",
+            position_error_no_stop: "Enter stop % or stop price",
+            position_error_invalid_stop: "Stop price is invalid for the direction",
+            position_error_max_loss: "Max loss must be > 0",
+            toast_copied_value: "Copied: {value}",
             panel_signals: "Signals",
             panel_volume: "Volume",
             panel_trades: "Trades",
@@ -352,6 +406,10 @@
         }
 
         updateNewSignalBanner();
+        updateFilterToggleLabel();
+        if (typeof calculatePosition === "function") {
+            calculatePosition();
+        }
         if (typeof updateKlineIntervalLabel === "function") {
             updateKlineIntervalLabel();
         }
@@ -423,6 +481,17 @@
         return "$" + v.toFixed(0);
     };
 
+    const QUOTE_SUFFIXES = ["USDT", "USDC", "BUSD", "USD", "BTC", "ETH"];
+    const getBaseSymbol = symbol => {
+        if (!symbol) return "";
+        for (const q of QUOTE_SUFFIXES) {
+            if (symbol.endsWith(q) && symbol.length > q.length) {
+                return symbol.slice(0, -q.length);
+            }
+        }
+        return symbol;
+    };
+
     const fmtDur = s => {
         if (s < 0) return t("time_now");
         const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
@@ -481,11 +550,16 @@
     let selectedLevels = new Set();
     let soundLevels = new Set(["R4", "R5", "S4", "S5"]);
     let currentView = 'signals';
+    let filterCollapsed = false;
     let menuSymbol = null;
     let menuFromRanking = false;
     let currentPatternSignal = null; // 当前显示详情的形态信号
     let currentPivotPreviewSymbol = null; // 当前预览的交易对
     let currentPivotPreviewPeriod = '1d'; // 当前预览的周期
+    let currentPositionSymbol = null; // 当前仓位计算的交易对
+    let positionLevels = []; // 当前可选点位
+    let positionStopMode = 'pct'; // 'pct' or 'price'
+    let positionLastPrice = 0;
     let pendingSignalCount = 0; // 滚动期间积压的新信号数
     const SIGNAL_SCROLL_THRESHOLD = 8;
     const SIGNAL_SCROLL_IDLE_MS = 220;
@@ -524,7 +598,8 @@
         volumeUnit: "pivot_volume_unit",
         filterLevels: "pivot_filter_levels",
         filterPeriod: "pivot_filter_period",
-        filterDirection: "pivot_filter_direction"
+        filterDirection: "pivot_filter_direction",
+        filterCollapsed: "pivot_filter_collapsed"
     };
 
     // ==================== 工具函数 ====================
@@ -549,6 +624,26 @@
     };
 
     const debounce = (fn, ms) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; };
+
+    function updateFilterToggleLabel() {
+        const btn = $("filterToggle");
+        if (!btn) return;
+        btn.setAttribute("title", t(filterCollapsed ? "btn_filter_expand" : "btn_filter_collapse"));
+        btn.setAttribute("aria-expanded", filterCollapsed ? "false" : "true");
+        btn.classList.toggle("collapsed", filterCollapsed);
+    }
+
+    function setFilterCollapsed(collapsed, save = true) {
+        filterCollapsed = !!collapsed;
+        document.body.classList.toggle("filter-collapsed", filterCollapsed);
+        updateFilterToggleLabel();
+        if (save) {
+            try {
+                localStorage.setItem(STORAGE_KEYS.filterCollapsed, filterCollapsed ? "1" : "0");
+            } catch (_) { }
+        }
+        calcScrollHeight();
+    }
 
     function updateNewSignalBanner() {
         const count = pendingSignalCount;
@@ -691,6 +786,11 @@
 
             const filterDirection = localStorage.getItem(STORAGE_KEYS.filterDirection);
             if (filterDirection) $("direction").value = filterDirection;
+
+            const collapsed = localStorage.getItem(STORAGE_KEYS.filterCollapsed);
+            if (collapsed !== null) {
+                setFilterCollapsed(collapsed === "1" || collapsed === "true", false);
+            }
         } catch (_) { }
     }
 
@@ -1916,6 +2016,16 @@
             };
         }
 
+        const klineBtn = $("rankingModalKlineBtn");
+        if (klineBtn) {
+            klineBtn.onclick = () => {
+                if (currentRankingSymbol) {
+                    showKlineModal(currentRankingSymbol);
+                    hideRankingModal();
+                }
+            };
+        }
+
         // Filter button
         const filterBtn = $("rankingModalFilterBtn");
         if (filterBtn) {
@@ -2047,6 +2157,449 @@
     // 暴露到全局
     window.hidePivotModal = hidePivotModal;
     window.switchPivotPeriod = switchPivotPeriod;
+
+    // ==================== 仓位计算 ====================
+    const POSITION_CUSTOM_VALUE = "__custom__";
+    const POSITION_CURRENT_VALUE = "__current__";
+
+    function buildPositionLevels(pivotData) {
+        const levels = [];
+        if (!pivotData) return levels;
+
+        const addLevels = (prefix, data) => {
+            if (!data) return;
+            [
+                ["R5", data.r5],
+                ["R4", data.r4],
+                ["R3", data.r3],
+                ["R2", data.r2],
+                ["R1", data.r1],
+                ["PP", data.pp],
+                ["S1", data.s1],
+                ["S2", data.s2],
+                ["S3", data.s3],
+                ["S4", data.s4],
+                ["S5", data.s5]
+            ].forEach(([name, price]) => {
+                if (price && price > 0) {
+                    levels.push({
+                        key: `${prefix}-${name}`,
+                        label: `${prefix}${name}`,
+                        price
+                    });
+                }
+            });
+        };
+
+        addLevels("D", pivotData.daily);
+        addLevels("W", pivotData.weekly);
+        return levels;
+    }
+
+    function formatInputPrice(v) {
+        if (!isFinite(v)) return "";
+        const a = Math.abs(v);
+        if (a >= 1000) return v.toFixed(2);
+        if (a >= 1) return v.toFixed(4);
+        return v.toPrecision(6);
+    }
+
+    function formatAmount(v) {
+        if (!isFinite(v)) return "-";
+        const a = Math.abs(v);
+        if (a >= 1000) return v.toFixed(2);
+        if (a >= 1) return v.toFixed(4);
+        return v.toPrecision(6);
+    }
+
+    function inferPrecisionFromPrice(price) {
+        if (!isFinite(price)) return 4;
+        const s = String(price);
+        if (s.includes("e-")) {
+            const [base, exp] = s.split("e-");
+            const baseDecimals = (base.split(".")[1] || "").length;
+            const expNum = parseInt(exp, 10) || 0;
+            return expNum + baseDecimals;
+        }
+        const parts = s.split(".");
+        return parts[1] ? parts[1].length : 0;
+    }
+
+    function getPricePrecision(symbol, fallbackPrice) {
+        const ticker = symbol ? tickerData.get(symbol) : null;
+        const refPrice = ticker && ticker.last_price ? ticker.last_price : fallbackPrice;
+        return inferPrecisionFromPrice(refPrice);
+    }
+
+    function formatPriceWithPrecision(price, precision) {
+        if (!isFinite(price)) return "-";
+        if (precision <= 0) return Math.round(price).toString();
+        return price.toFixed(precision);
+    }
+
+    function snapPrice(price, precision, mode = "round") {
+        if (!isFinite(price)) return price;
+        if (precision <= 0) return Math[mode === "floor" ? "floor" : mode === "ceil" ? "ceil" : "round"](price);
+        const step = Math.pow(10, -precision);
+        const scaled = price / step;
+        const fn = mode === "floor" ? Math.floor : mode === "ceil" ? Math.ceil : Math.round;
+        return fn(scaled) * step;
+    }
+
+    function formatDiffPct(levelPrice, currentPrice) {
+        if (!levelPrice || !currentPrice) return "";
+        const diffPct = ((levelPrice - currentPrice) / currentPrice) * 100;
+        const sign = diffPct >= 0 ? "+" : "";
+        return sign + diffPct.toFixed(2) + "%";
+    }
+
+    function formatLevelOption(label, price, currentPrice, precision) {
+        const priceText = formatPriceWithPrecision(price, precision);
+        const diffText = formatDiffPct(price, currentPrice);
+        return diffText ? `${label} ${priceText} (${diffText})` : `${label} ${priceText}`;
+    }
+
+    function getSelectedPositionPrice() {
+        const select = $("positionLevelSelect");
+        if (!select) return 0;
+        if (select.value === POSITION_CURRENT_VALUE) {
+            const ticker = tickerData.get(currentPositionSymbol);
+            return ticker ? ticker.last_price : 0;
+        }
+        if (select.value === POSITION_CUSTOM_VALUE) {
+            return parseFloat($("positionLevelCustom").value) || 0;
+        }
+        const level = positionLevels.find(l => l.key === select.value);
+        return level ? level.price : 0;
+    }
+
+    function refreshPositionOptions(currentPrice) {
+        const select = $("positionLevelSelect");
+        if (!select || !currentPrice) return;
+        const precision = getPricePrecision(currentPositionSymbol, currentPrice);
+        select.querySelectorAll("option").forEach(opt => {
+            const value = opt.value;
+            if (value === POSITION_CUSTOM_VALUE) return;
+            if (value === POSITION_CURRENT_VALUE) {
+                opt.dataset.price = String(currentPrice);
+                opt.dataset.label = t("label_current_price");
+            }
+            const price = parseFloat(opt.dataset.price) || 0;
+            const label = opt.dataset.label || opt.textContent || "";
+            const nextText = formatLevelOption(label, price, currentPrice, precision);
+            if (opt.textContent !== nextText) {
+                opt.textContent = nextText;
+            }
+        });
+    }
+
+    function updatePositionDiff(currentPrice, refPrice) {
+        const diffEl = $("positionDiff");
+        if (!diffEl) return;
+        if (!currentPrice || !refPrice) {
+            diffEl.textContent = "-";
+            return;
+        }
+        const diffPct = ((refPrice - currentPrice) / currentPrice) * 100;
+        const diffText = (diffPct >= 0 ? "+" : "") + diffPct.toFixed(2) + "%";
+        const precision = getPricePrecision(currentPositionSymbol, currentPrice);
+        diffEl.textContent = t("position_diff", {
+            current: formatPriceWithPrecision(currentPrice, precision),
+            level: formatPriceWithPrecision(refPrice, precision),
+            diff: diffText
+        });
+    }
+
+    function calculatePosition() {
+        const modal = $("positionModal");
+        if (!modal || modal.style.display === 'none' || !currentPositionSymbol) return;
+
+        const ticker = tickerData.get(currentPositionSymbol);
+        const currentPrice = ticker ? ticker.last_price : 0;
+        const refPrice = getSelectedPositionPrice();
+        const precision = getPricePrecision(currentPositionSymbol, currentPrice);
+        const roundedCurrent = currentPrice ? snapPrice(currentPrice, precision, "round") : 0;
+        if (roundedCurrent && roundedCurrent !== positionLastPrice) {
+            positionLastPrice = roundedCurrent;
+            refreshPositionOptions(roundedCurrent);
+        }
+        updatePositionDiff(currentPrice, refPrice);
+
+        const entryEl = $("positionEntry");
+        const stopEl = $("positionStop");
+        const riskEl = $("positionRisk");
+        const sizeEl = $("positionSize");
+        const notionalEl = $("positionNotional");
+        const errorEl = $("positionError");
+
+        const setError = (msg) => {
+            if (!errorEl) return;
+            if (!msg) {
+                errorEl.style.display = 'none';
+                errorEl.textContent = '';
+                return;
+            }
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+        };
+
+        if (!currentPrice) {
+            setError(t("position_error_no_price"));
+            if (entryEl) {
+                entryEl.textContent = "-";
+                entryEl.dataset.value = "";
+            }
+            if (stopEl) {
+                stopEl.textContent = "-";
+                stopEl.dataset.value = "";
+            }
+            if (riskEl) riskEl.textContent = "-";
+            if (sizeEl) sizeEl.textContent = "-";
+            if (notionalEl) notionalEl.textContent = "-";
+            return;
+        }
+
+        if (!refPrice) {
+            setError(t("position_error_no_level"));
+            if (entryEl) {
+                entryEl.textContent = "-";
+                entryEl.dataset.value = "";
+            }
+            if (stopEl) {
+                stopEl.textContent = "-";
+                stopEl.dataset.value = "";
+            }
+            if (riskEl) riskEl.textContent = "-";
+            if (sizeEl) sizeEl.textContent = "-";
+            if (notionalEl) notionalEl.textContent = "-";
+            return;
+        }
+
+        const sideBtn = document.querySelector("#positionSide button.active");
+        const side = sideBtn ? sideBtn.dataset.side : 'long';
+        const offset = parseFloat($("positionOffset").value) || 0;
+        const entry = side === 'long'
+            ? refPrice * (1 - offset / 100)
+            : refPrice * (1 + offset / 100);
+        const entryPrice = snapPrice(entry, precision, "round");
+
+        if (entryEl) {
+            const entryText = formatPriceWithPrecision(entryPrice, precision);
+            entryEl.textContent = entryText;
+            entryEl.dataset.value = entryText;
+        }
+
+        const stopPctInput = parseFloat($("positionStopPct").value);
+        const stopPriceInput = parseFloat($("positionStopPrice").value);
+        let stopPrice = NaN;
+        let stopPct = NaN;
+        const stopMode = side === 'long' ? "floor" : "ceil";
+
+        if (positionStopMode === 'price' && isFinite(stopPriceInput)) {
+            stopPrice = snapPrice(stopPriceInput, precision, stopMode);
+            if (entryPrice > 0) {
+                stopPct = side === 'long'
+                    ? ((entryPrice - stopPrice) / entryPrice) * 100
+                    : ((stopPrice - entryPrice) / entryPrice) * 100;
+                if (isFinite(stopPct)) $("positionStopPct").value = stopPct.toFixed(2);
+            }
+        } else if (positionStopMode === 'pct' && isFinite(stopPctInput)) {
+            stopPct = stopPctInput;
+            const rawStop = side === 'long'
+                ? entryPrice * (1 - stopPct / 100)
+                : entryPrice * (1 + stopPct / 100);
+            stopPrice = snapPrice(rawStop, precision, stopMode);
+            if (isFinite(stopPrice)) $("positionStopPrice").value = formatPriceWithPrecision(stopPrice, precision);
+        } else if (isFinite(stopPriceInput)) {
+            stopPrice = snapPrice(stopPriceInput, precision, stopMode);
+        } else if (isFinite(stopPctInput)) {
+            stopPct = stopPctInput;
+            const rawStop = side === 'long'
+                ? entryPrice * (1 - stopPct / 100)
+                : entryPrice * (1 + stopPct / 100);
+            stopPrice = snapPrice(rawStop, precision, stopMode);
+        }
+
+        if (!isFinite(stopPrice)) {
+            setError(t("position_error_no_stop"));
+            if (stopEl) {
+                stopEl.textContent = "-";
+                stopEl.dataset.value = "";
+            }
+            if (riskEl) riskEl.textContent = "-";
+            if (sizeEl) sizeEl.textContent = "-";
+            if (notionalEl) notionalEl.textContent = "-";
+            return;
+        }
+
+        if ((side === 'long' && stopPrice >= entryPrice) || (side === 'short' && stopPrice <= entryPrice)) {
+            setError(t("position_error_invalid_stop"));
+            if (stopEl) {
+                const stopText = formatPriceWithPrecision(stopPrice, precision);
+                stopEl.textContent = stopText;
+                stopEl.dataset.value = stopText;
+            }
+            if (riskEl) riskEl.textContent = "-";
+            if (sizeEl) sizeEl.textContent = "-";
+            if (notionalEl) notionalEl.textContent = "-";
+            return;
+        }
+
+        const riskPerUnit = Math.abs(entryPrice - stopPrice);
+        const riskPct = entryPrice > 0 ? (riskPerUnit / entryPrice) * 100 : 0;
+        if (stopEl) {
+            const stopText = formatPriceWithPrecision(stopPrice, precision);
+            stopEl.textContent = stopText;
+            stopEl.dataset.value = stopText;
+        }
+        if (riskEl) riskEl.textContent = `${formatPriceWithPrecision(riskPerUnit, precision)} (${riskPct.toFixed(2)}%)`;
+
+        const maxLoss = parseFloat($("positionMaxLoss").value) || 0;
+        if (maxLoss <= 0) {
+            setError(t("position_error_max_loss"));
+            if (sizeEl) sizeEl.textContent = "-";
+            if (notionalEl) notionalEl.textContent = "-";
+            return;
+        }
+
+        const size = riskPerUnit > 0 ? maxLoss / riskPerUnit : 0;
+        const notional = size * entryPrice;
+        if (sizeEl) sizeEl.textContent = formatAmount(notional) + " USDT";
+        if (notionalEl) {
+            const base = getBaseSymbol(currentPositionSymbol);
+            notionalEl.textContent = formatAmount(size) + (base ? " " + base : "");
+        }
+        setError("");
+    }
+
+    async function showPositionModal(symbol) {
+        currentPositionSymbol = symbol;
+        const modal = $("positionModal");
+        if (!modal) return;
+
+        $("positionSymbol").textContent = symbol;
+        positionStopMode = 'pct';
+
+        let pivotData = null;
+        try {
+            pivotData = await getPivotData(symbol);
+        } catch (_) {
+            pivotData = null;
+        }
+
+        positionLevels = buildPositionLevels(pivotData);
+        const select = $("positionLevelSelect");
+        if (select) {
+            const ticker = tickerData.get(symbol);
+            const currentPrice = ticker ? ticker.last_price : 0;
+            const precision = getPricePrecision(symbol, currentPrice);
+            positionLastPrice = currentPrice ? snapPrice(currentPrice, precision, "round") : 0;
+
+            if (currentPrice) {
+                positionLevels.push({
+                    key: POSITION_CURRENT_VALUE,
+                    label: t("label_current_price"),
+                    price: currentPrice
+                });
+            }
+
+            positionLevels.sort((a, b) => b.price - a.price);
+
+            const options = positionLevels.map(level => {
+                const label = level.key === POSITION_CURRENT_VALUE ? t("label_current_price") : level.label;
+                const text = formatLevelOption(label, level.price, currentPrice, precision);
+                return `<option value="${level.key}" data-price="${level.price}" data-label="${label}">${text}</option>`;
+            }).join("");
+            select.innerHTML = options + `<option value="${POSITION_CUSTOM_VALUE}">${t("label_custom")}</option>`;
+
+            select.value = currentPrice ? POSITION_CURRENT_VALUE : (positionLevels[0] ? positionLevels[0].key : POSITION_CUSTOM_VALUE);
+        }
+
+        const customInput = $("positionLevelCustom");
+        if (customInput) {
+            customInput.style.display = (select && select.value === POSITION_CUSTOM_VALUE) ? '' : 'none';
+            if (customInput.style.display !== 'none' && !customInput.value) {
+                const ticker = tickerData.get(symbol);
+                if (ticker && ticker.last_price) {
+                    customInput.value = formatInputPrice(ticker.last_price);
+                }
+            }
+        }
+
+        modal.style.display = 'flex';
+        calculatePosition();
+    }
+
+    function hidePositionModal() {
+        const modal = $("positionModal");
+        if (modal) modal.style.display = 'none';
+        currentPositionSymbol = null;
+    }
+
+    function setupPositionModal() {
+        const modal = $("positionModal");
+        if (!modal) return;
+
+        modal.onclick = (e) => {
+            if (e.target === modal) hidePositionModal();
+        };
+
+        const bindCopy = (el) => {
+            if (!el) return;
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const val = el.dataset.value || "";
+                if (!val) return;
+                copyToClipboard(val)
+                    .then(() => showToast(t("toast_copied_value", { value: val })))
+                    .catch(() => showToast(t("toast_copy_failed")));
+            };
+        };
+        bindCopy($("positionEntry"));
+        bindCopy($("positionStop"));
+
+        const sideBtns = document.querySelectorAll("#positionSide button");
+        sideBtns.forEach(btn => {
+            btn.onclick = () => {
+                sideBtns.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                calculatePosition();
+            };
+        });
+
+        const select = $("positionLevelSelect");
+        const customInput = $("positionLevelCustom");
+        if (select) {
+            select.onchange = () => {
+                if (customInput) {
+                    customInput.style.display = select.value === POSITION_CUSTOM_VALUE ? '' : 'none';
+                }
+                calculatePosition();
+            };
+        }
+        if (customInput) {
+            customInput.oninput = () => calculatePosition();
+        }
+
+        $("positionOffset").oninput = () => calculatePosition();
+        $("positionStopPct").oninput = () => {
+            positionStopMode = 'pct';
+            calculatePosition();
+        };
+        $("positionStopPrice").oninput = () => {
+            positionStopMode = 'price';
+            calculatePosition();
+        };
+        $("positionMaxLoss").oninput = () => calculatePosition();
+    }
+
+    function updatePositionModalIfOpen() {
+        const modal = $("positionModal");
+        if (!modal || modal.style.display === 'none' || !currentPositionSymbol) return;
+        calculatePosition();
+    }
+
+    window.hidePositionModal = hidePositionModal;
 
     // ==================== Kline 预览 ====================
     const BINANCE_PING_URL = "https://fapi.binance.com/fapi/v1/ping";
@@ -2554,6 +3107,10 @@
                         showPivotPreview(menuSymbol);
                         break;
 
+                    case "position":
+                        showPositionModal(menuSymbol);
+                        break;
+
                     case "kline":
                         showKlineModal(menuSymbol);
                         break;
@@ -2627,6 +3184,14 @@
         const langSelect = $("langSelect");
         if (!langSelect) return;
         langSelect.onchange = () => setLanguage(langSelect.value);
+    }
+
+    function setupFilterToggle() {
+        const btn = $("filterToggle");
+        if (!btn) return;
+        btn.onclick = () => {
+            setFilterCollapsed(!filterCollapsed);
+        };
     }
 
     function setupFilters() {
@@ -2807,6 +3372,16 @@
             jumpToTrade(currentPatternSignal.symbol);
             hidePatternModal();
         };
+
+        // Kline 按钮
+        const klineBtn = $("modalKlineBtn");
+        if (klineBtn) {
+            klineBtn.onclick = () => {
+                if (!currentPatternSignal) return;
+                showKlineModal(currentPatternSignal.symbol);
+                hidePatternModal();
+            };
+        }
 
         // Filter 按钮
         $("modalFilterBtn").onclick = () => {
@@ -3253,6 +3828,7 @@
             });
             // 更新枢轴点预览 Modal（如果打开）
             updatePivotPreviewIfOpen();
+            updatePositionModalIfOpen();
             return;
         }
 
@@ -3264,6 +3840,7 @@
 
             // 更新枢轴点预览 Modal（如果打开）
             updatePivotPreviewIfOpen();
+            updatePositionModalIfOpen();
         } else {
             // 排行榜视图：重新计算并更新
             updateRankingList();
@@ -3416,10 +3993,12 @@
         setupLevelBtns();
         setupTabs();
         setupLanguage();
+        setupFilterToggle();
         setupFilters();
         setupActionMenu();
         setupPatternModal();
         setupRankingModal();
+        setupPositionModal();
         setupKlineModal();
         initClusterize();
         setupSignalNewBanner();
