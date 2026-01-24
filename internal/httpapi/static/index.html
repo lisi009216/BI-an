@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/clusterize.js/0.19.0/clusterize.min.css" />
     <link rel="stylesheet" href="/static/app.css" />
 
-    
+
 </head>
 
 <body>
@@ -344,7 +344,8 @@
     <div id="actionMenu" class="action-menu">
         <div class="action-menu-item" data-action="trade" data-i18n="action_jump_trade">🚀 跳转交易</div>
         <div class="action-menu-item" data-action="pivots" data-i18n="action_pivot_levels">📊 枢轴点位</div>
-        <div class="action-menu-item" data-action="position" data-i18n="action_position_calc">⚖️ 仓位计算</div>
+        <div class="action-menu-item" data-action="position_long" data-i18n="action_position_long">📈 做多仓位</div>
+        <div class="action-menu-item" data-action="position_short" data-i18n="action_position_short">📉 做空仓位</div>
         <div class="action-menu-item" data-action="kline" data-i18n="action_kline_preview">K线预览</div>
         <div class="action-menu-item" data-action="copy" data-i18n="action_copy_symbol">📋 复制币种</div>
         <div class="action-menu-item" data-action="filter" data-i18n="action_filter_symbol">🔍 筛选币种</div>
@@ -388,6 +389,14 @@
                         </div>
                     </div>
                     <div class="position-row">
+                        <span class="position-label" data-i18n="position_leverage">杠杆</span>
+                        <div class="position-field">
+                            <input id="positionLeverage" type="number" class="input-sm" min="1" step="1" value="20"
+                                inputmode="numeric" />
+                            <span class="position-unit">x</span>
+                        </div>
+                    </div>
+                    <div class="position-row">
                         <span class="position-label" data-i18n="position_level">参考点位</span>
                         <div class="position-field">
                             <select id="positionLevelSelect"></select>
@@ -403,21 +412,39 @@
                             inputmode="decimal" />
                     </div>
                     <div class="position-row">
-                        <span class="position-label" data-i18n="position_stop_pct">止损比例</span>
-                        <input id="positionStopPct" type="number" class="input-sm" min="0" step="0.1"
-                            placeholder="%" inputmode="decimal" />
-                    </div>
-                    <div class="position-row">
-                        <span class="position-label" data-i18n="position_stop_price">止损价格</span>
-                        <input id="positionStopPrice" type="number" class="input-sm" min="0" step="0.0001"
-                            placeholder="-" inputmode="decimal" />
+                        <span class="position-label" data-i18n="position_stop_group">止损</span>
+                        <div class="position-field dual">
+                            <div class="position-sub">
+                                <input id="positionStopPct" type="number" class="input-sm" min="0" step="0.1"
+                                    data-i18n-placeholder="position_stop_pct" inputmode="decimal" />
+                                <span class="position-unit">%</span>
+                            </div>
+                            <div class="position-sub">
+                                <input id="positionStopPrice" type="number" class="input-sm" min="0" step="0.0001"
+                                    data-i18n-placeholder="position_stop_price" inputmode="decimal" />
+                            </div>
+                        </div>
                     </div>
                     <div class="position-row">
                         <span class="position-label" data-i18n="position_max_loss">最大亏损</span>
                         <div class="position-field">
-                            <input id="positionMaxLoss" type="number" class="input-sm" min="0" step="1"
-                                value="10" inputmode="decimal" />
+                            <input id="positionMaxLoss" type="number" class="input-sm" min="0" step="1" value="10"
+                                inputmode="decimal" />
                             <span class="position-unit">USDT</span>
+                        </div>
+                    </div>
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="position_take_group">止盈</span>
+                        <div class="position-field dual">
+                            <div class="position-sub">
+                                <input id="positionTakeProfit" type="number" class="input-sm" min="0" step="1" value=""
+                                    data-i18n-placeholder="position_take_profit" inputmode="decimal" />
+                                <span class="position-unit">USDT</span>
+                            </div>
+                            <div class="position-sub">
+                                <input id="positionTakePrice" type="number" class="input-sm" min="0" step="0.0001"
+                                    data-i18n-placeholder="position_take_price" inputmode="decimal" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -431,6 +458,14 @@
                         <span id="positionStop" class="value copyable">-</span>
                     </div>
                     <div class="stat-row">
+                        <span class="label" data-i18n="position_take">止盈价</span>
+                        <span id="positionTake" class="value">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label" data-i18n="position_take_amount">止盈收益</span>
+                        <span id="positionTakeAmount" class="value">-</span>
+                    </div>
+                    <div class="stat-row">
                         <span class="label" data-i18n="position_risk">风险距离</span>
                         <span id="positionRisk" class="value">-</span>
                     </div>
@@ -442,8 +477,51 @@
                         <span class="label" data-i18n="position_notional">数量</span>
                         <span id="positionNotional" class="value">-</span>
                     </div>
+                    <div class="stat-row">
+                        <span class="label" data-i18n="position_margin">保证金</span>
+                        <span id="positionMargin" class="value">-</span>
+                    </div>
                 </div>
+                <div class="position-actions">
+                    <div class="position-api">
+                        <span class="position-label" data-i18n="position_api">API</span>
+                        <span id="positionApiStatus" class="api-status">-</span>
+                    </div>
+                    <div class="position-buttons">
+                        <button id="positionApiBtn" type="button" class="btn-filter"
+                            data-i18n="btn_api_config">API</button>
+                        <button id="positionOrderBtn" type="button" class="btn-trade"
+                            data-i18n="btn_place_order">下单</button>
+                    </div>
+                </div>
+                <div id="positionOrderStatus" class="position-status" style="display:none"></div>
                 <div id="positionError" class="position-error" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+    <!-- API Key Modal -->
+    <div id="apiModal" class="pattern-modal" style="display:none">
+        <div class="position-modal-content">
+            <div class="modal-header">
+                <span class="pattern-name" data-i18n="api_title">API 设置</span>
+                <button class="close-btn" onclick="hideApiModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="position-form">
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="api_key_label">API Key</span>
+                        <input id="apiKeyInput" type="text" class="input-sm" autocomplete="off" placeholder="-" />
+                    </div>
+                    <div class="position-row">
+                        <span class="position-label" data-i18n="api_secret_label">Secret</span>
+                        <input id="apiSecretInput" type="password" class="input-sm" autocomplete="off"
+                            placeholder="-" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="apiSaveBtn" class="btn-trade" data-i18n="btn_api_save">保存</button>
+                <button id="apiClearBtn" class="btn-filter" data-i18n="btn_api_clear">清除</button>
             </div>
         </div>
     </div>
@@ -534,6 +612,7 @@
                 <span class="stat-value" id="ftUptime">-</span>
             </div>
             <div class="stat-item version" id="ftVersion">-</div>
+            <button id="recalcHeight" class="footer-reload" type="button" data-i18n="btn_recalc_height">重算高度</button>
         </div>
     </div>
     <!-- Clusterize.js -->

@@ -74,12 +74,14 @@
             btn_trade: "交易",
             btn_filter: "筛选",
             btn_kline: "K线",
+            btn_recalc_height: "重算高度",
             btn_filter_short: "筛选",
             btn_filter_collapse: "收起筛选",
             btn_filter_expand: "展开筛选",
             action_jump_trade: "🚀 跳转交易",
             action_pivot_levels: "📊 枢轴点位",
-            action_position_calc: "⚖️ 仓位计算",
+            action_position_long: "📈 做多仓位",
+            action_position_short: "📉 做空仓位",
             action_copy_symbol: "📋 复制币种",
             action_filter_symbol: "🔍 筛选币种",
             action_show_signals: "📊 查看信号",
@@ -91,20 +93,59 @@
             position_level: "参考点位",
             position_custom_price: "自定义价",
             position_offset: "偏移%",
+            position_stop_group: "止损",
             position_stop_pct: "止损比例",
             position_stop_price: "止损价格",
+            position_take_group: "止盈",
+            position_take_profit: "止盈金额",
+            position_take_price: "止盈价格",
             position_max_loss: "最大亏损",
+            position_leverage: "杠杆",
             position_entry: "开仓价",
             position_stop: "止损价",
+            position_take: "止盈价",
+            position_take_amount: "止盈收益",
             position_risk: "风险距离",
             position_size: "仓位大小",
             position_notional: "数量",
+            position_margin: "保证金",
             position_diff: "当前价 {current} · 点位 {level} · 差 {diff}",
             position_error_no_price: "暂无当前价格",
             position_error_no_level: "请选择有效点位或自定义价",
             position_error_no_stop: "请填写止损比例或止损价格",
             position_error_invalid_stop: "止损价方向不正确",
             position_error_max_loss: "最大亏损需大于 0",
+            position_error_no_take: "请填写止盈金额或止盈价格",
+            position_error_invalid_take: "止盈价方向不正确",
+            position_api: "API",
+            api_title: "API 设置",
+            api_key_label: "API Key",
+            api_secret_label: "Secret",
+            api_status_ready: "已配置",
+            api_status_missing: "未配置",
+            btn_api_config: "API",
+            btn_api_save: "保存",
+            btn_api_clear: "清除",
+            btn_place_order: "下单",
+            order_status_ready: "准备下单",
+            order_status_submitted: "下单中...",
+            order_status_success: "下单成功",
+            order_status_failed: "下单失败: {msg}",
+            order_status_wait_fill: "等待成交...",
+            order_status_set_leverage: "设置杠杆...",
+            order_status_place_entry: "挂开仓限价单...",
+            order_status_place_stop: "挂止损单...",
+            order_status_place_take: "挂止盈单...",
+            order_error_no_calc: "计算结果为空",
+            order_error_qty: "数量过小",
+            order_error_min_qty: "数量低于最小下单",
+            order_error_min_notional: "名义价值低于最小下单",
+            order_error_no_api: "API 未配置",
+            order_error_entry_failed: "开仓单: {msg}",
+            order_error_stop_failed: "止损单: {msg}",
+            order_error_take_failed: "止盈单: {msg}",
+            confirm_close_position: "当前内容未提交，确认关闭？",
+            confirm_close_api: "API 信息未保存，确认关闭？",
             toast_copied_value: "已复制: {value}",
             panel_signals: "信号",
             panel_volume: "成交额",
@@ -248,12 +289,14 @@
             btn_trade: "Trade",
             btn_filter: "Filter",
             btn_kline: "Kline",
+            btn_recalc_height: "Recalc Height",
             btn_filter_short: "Filters",
             btn_filter_collapse: "Hide Filters",
             btn_filter_expand: "Show Filters",
             action_jump_trade: "🚀 Jump to Trade",
             action_pivot_levels: "📊 Pivot Levels",
-            action_position_calc: "⚖️ Position Calc",
+            action_position_long: "📈 Long Position",
+            action_position_short: "📉 Short Position",
             action_copy_symbol: "📋 Copy Symbol",
             action_filter_symbol: "🔍 Filter Symbol",
             action_show_signals: "📊 Show Signals",
@@ -265,20 +308,59 @@
             position_level: "Reference",
             position_custom_price: "Custom price",
             position_offset: "Offset %",
+            position_stop_group: "Stop Loss",
             position_stop_pct: "Stop %",
             position_stop_price: "Stop Price",
+            position_take_group: "Take Profit",
+            position_take_profit: "Take Profit",
+            position_take_price: "TP Price",
             position_max_loss: "Max Loss",
+            position_leverage: "Leverage",
             position_entry: "Entry",
             position_stop: "Stop",
+            position_take: "TP Price",
+            position_take_amount: "TP Profit",
             position_risk: "Risk Distance",
             position_size: "Position Size",
             position_notional: "Quantity",
+            position_margin: "Margin",
             position_diff: "Current {current} · Level {level} · Diff {diff}",
             position_error_no_price: "No current price",
             position_error_no_level: "Select a valid level or custom price",
             position_error_no_stop: "Enter stop % or stop price",
             position_error_invalid_stop: "Stop price is invalid for the direction",
             position_error_max_loss: "Max loss must be > 0",
+            position_error_no_take: "Enter TP amount or TP price",
+            position_error_invalid_take: "TP price is invalid for the direction",
+            position_api: "API",
+            api_title: "API Setup",
+            api_key_label: "API Key",
+            api_secret_label: "Secret",
+            api_status_ready: "Configured",
+            api_status_missing: "Missing",
+            btn_api_config: "API",
+            btn_api_save: "Save",
+            btn_api_clear: "Clear",
+            btn_place_order: "Place",
+            order_status_ready: "Ready",
+            order_status_submitted: "Placing...",
+            order_status_success: "Order placed",
+            order_status_failed: "Order failed: {msg}",
+            order_status_wait_fill: "Waiting fill...",
+            order_status_set_leverage: "Setting leverage...",
+            order_status_place_entry: "Placing entry...",
+            order_status_place_stop: "Placing stop...",
+            order_status_place_take: "Placing take profit...",
+            order_error_no_calc: "No calculation",
+            order_error_qty: "Quantity too small",
+            order_error_min_qty: "Below min qty",
+            order_error_min_notional: "Below min notional",
+            order_error_no_api: "API missing",
+            order_error_entry_failed: "Entry order: {msg}",
+            order_error_stop_failed: "Stop order: {msg}",
+            order_error_take_failed: "Take profit order: {msg}",
+            confirm_close_position: "You have unsaved inputs. Close anyway?",
+            confirm_close_api: "API inputs are not saved. Close anyway?",
             toast_copied_value: "Copied: {value}",
             panel_signals: "Signals",
             panel_volume: "Volume",
@@ -407,6 +489,7 @@
 
         updateNewSignalBanner();
         updateFilterToggleLabel();
+        updateApiStatus();
         if (typeof calculatePosition === "function") {
             calculatePosition();
         }
@@ -560,6 +643,10 @@
     let positionLevels = []; // 当前可选点位
     let positionStopMode = 'pct'; // 'pct' or 'price'
     let positionLastPrice = 0;
+    let positionTakeMode = 'amount'; // 'amount' or 'price'
+    let positionCalc = null;
+    let positionFormDirty = false;
+    let apiFormSnapshot = { apiKey: "", apiSecret: "" };
     let pendingSignalCount = 0; // 滚动期间积压的新信号数
     const SIGNAL_SCROLL_THRESHOLD = 8;
     const SIGNAL_SCROLL_IDLE_MS = 220;
@@ -599,7 +686,13 @@
         filterLevels: "pivot_filter_levels",
         filterPeriod: "pivot_filter_period",
         filterDirection: "pivot_filter_direction",
-        filterCollapsed: "pivot_filter_collapsed"
+        filterCollapsed: "pivot_filter_collapsed",
+        positionLeverage: "pivot_position_leverage"
+    };
+
+    const API_STORAGE_KEYS = {
+        apiKey: "binance_api_key",
+        apiSecret: "binance_api_secret"
     };
 
     // ==================== 工具函数 ====================
@@ -645,6 +738,43 @@
         calcScrollHeight();
     }
 
+    function getApiKeys() {
+        try {
+            const apiKey = localStorage.getItem(API_STORAGE_KEYS.apiKey) || "";
+            const apiSecret = localStorage.getItem(API_STORAGE_KEYS.apiSecret) || "";
+            return { apiKey, apiSecret };
+        } catch (_) {
+            return { apiKey: "", apiSecret: "" };
+        }
+    }
+
+    function setApiKeys(apiKey, apiSecret) {
+        try {
+            if (apiKey) localStorage.setItem(API_STORAGE_KEYS.apiKey, apiKey);
+            else localStorage.removeItem(API_STORAGE_KEYS.apiKey);
+            if (apiSecret) localStorage.setItem(API_STORAGE_KEYS.apiSecret, apiSecret);
+            else localStorage.removeItem(API_STORAGE_KEYS.apiSecret);
+        } catch (_) { }
+        updateApiStatus();
+    }
+
+    function clearApiKeys() {
+        try {
+            localStorage.removeItem(API_STORAGE_KEYS.apiKey);
+            localStorage.removeItem(API_STORAGE_KEYS.apiSecret);
+        } catch (_) { }
+        updateApiStatus();
+    }
+
+    function updateApiStatus() {
+        const statusEl = $("positionApiStatus");
+        if (!statusEl) return;
+        const { apiKey, apiSecret } = getApiKeys();
+        const ready = apiKey && apiSecret;
+        statusEl.textContent = ready ? t("api_status_ready") : t("api_status_missing");
+        statusEl.classList.toggle("ready", !!ready);
+    }
+
     function updateNewSignalBanner() {
         const count = pendingSignalCount;
         const banner = $("signalNewBanner");
@@ -674,6 +804,9 @@
             badge.textContent = badgeText;
             badge.style.display = count > 0 ? 'inline-flex' : 'none';
         }
+
+        // banner 显示/隐藏会影响可视高度
+        calcScrollHeight();
     }
 
     function clearPendingSignals() {
@@ -786,6 +919,9 @@
 
             const filterDirection = localStorage.getItem(STORAGE_KEYS.filterDirection);
             if (filterDirection) $("direction").value = filterDirection;
+
+            const leverage = localStorage.getItem(STORAGE_KEYS.positionLeverage);
+            if (leverage) $("positionLeverage").value = leverage;
 
             const collapsed = localStorage.getItem(STORAGE_KEYS.filterCollapsed);
             if (collapsed !== null) {
@@ -2246,6 +2382,107 @@
         return fn(scaled) * step;
     }
 
+    function precisionFromStep(stepStr) {
+        if (!stepStr) return 0;
+        const s = String(stepStr).replace(/0+$/, "");
+        const idx = s.indexOf(".");
+        return idx >= 0 ? s.length - idx - 1 : 0;
+    }
+
+    function snapToStep(value, step, mode = "floor") {
+        if (!isFinite(value) || !isFinite(step) || step <= 0) return value;
+        const scaled = value / step;
+        const fn = mode === "ceil" ? Math.ceil : mode === "round" ? Math.round : Math.floor;
+        return fn(scaled) * step;
+    }
+
+    async function loadExchangeInfo() {
+        const now = Date.now();
+        if (exchangeInfoLoadedAt && (now - exchangeInfoLoadedAt) < EXCHANGE_INFO_TTL && exchangeInfoMap.size) {
+            return exchangeInfoMap;
+        }
+        if (exchangeInfoPromise) return exchangeInfoPromise;
+        exchangeInfoPromise = (async () => {
+            const r = await fetch(BINANCE_EXCHANGE_INFO_URL, { cache: "no-store" });
+            if (!r.ok) throw new Error("exchangeInfo " + r.status);
+            const data = await r.json();
+            const map = new Map();
+            (data.symbols || []).forEach(sym => {
+                const filters = sym.filters || [];
+                const priceFilter = filters.find(f => f.filterType === "PRICE_FILTER");
+                const lotFilter = filters.find(f => f.filterType === "LOT_SIZE");
+                const minNotional = filters.find(f => f.filterType === "MIN_NOTIONAL");
+                const tickSize = priceFilter ? parseFloat(priceFilter.tickSize) : null;
+                const stepSize = lotFilter ? parseFloat(lotFilter.stepSize) : null;
+                const minQty = lotFilter ? parseFloat(lotFilter.minQty) : null;
+                const minNotionalVal = minNotional ? parseFloat(minNotional.notional || minNotional.minNotional) : null;
+                map.set(sym.symbol, {
+                    tickSize,
+                    stepSize,
+                    minQty,
+                    minNotional: minNotionalVal,
+                    pricePrecision: precisionFromStep(priceFilter ? priceFilter.tickSize : null),
+                    qtyPrecision: precisionFromStep(lotFilter ? lotFilter.stepSize : null)
+                });
+            });
+            exchangeInfoMap = map;
+            exchangeInfoLoadedAt = now;
+            exchangeInfoPromise = null;
+            return map;
+        })().catch(err => {
+            exchangeInfoPromise = null;
+            return exchangeInfoMap;
+        });
+        return exchangeInfoPromise;
+    }
+
+    function getSymbolRule(symbol, fallbackPrice) {
+        const rule = symbol ? exchangeInfoMap.get(symbol) : null;
+        if (rule) {
+            return {
+                tickSize: rule.tickSize,
+                stepSize: rule.stepSize,
+                minQty: rule.minQty,
+                minNotional: rule.minNotional,
+                precision: rule.pricePrecision || 0,
+                qtyPrecision: rule.qtyPrecision || 0
+            };
+        }
+        return {
+            tickSize: null,
+            stepSize: null,
+            minQty: null,
+            minNotional: null,
+            precision: getPricePrecision(symbol, fallbackPrice),
+            qtyPrecision: 6
+        };
+    }
+
+    function formatPriceByRule(price, rule) {
+        return formatPriceWithPrecision(price, rule.precision || 0);
+    }
+
+    function formatQtyByRule(qty, rule) {
+        if (!isFinite(qty)) return "0";
+        const precision = rule.qtyPrecision || 0;
+        if (precision <= 0) return Math.round(qty).toString();
+        return qty.toFixed(precision);
+    }
+
+    function snapPriceByRule(price, rule, mode = "round") {
+        if (rule.tickSize) {
+            return snapToStep(price, rule.tickSize, mode);
+        }
+        return snapPrice(price, rule.precision || 0, mode);
+    }
+
+    function snapQtyByRule(qty, rule, mode = "floor") {
+        if (rule.stepSize) {
+            return snapToStep(qty, rule.stepSize, mode);
+        }
+        return snapPrice(qty, rule.qtyPrecision || 6, mode);
+    }
+
     function formatDiffPct(levelPrice, currentPrice) {
         if (!levelPrice || !currentPrice) return "";
         const diffPct = ((levelPrice - currentPrice) / currentPrice) * 100;
@@ -2276,7 +2513,7 @@
     function refreshPositionOptions(currentPrice) {
         const select = $("positionLevelSelect");
         if (!select || !currentPrice) return;
-        const precision = getPricePrecision(currentPositionSymbol, currentPrice);
+        const rule = getSymbolRule(currentPositionSymbol, currentPrice);
         select.querySelectorAll("option").forEach(opt => {
             const value = opt.value;
             if (value === POSITION_CUSTOM_VALUE) return;
@@ -2286,7 +2523,7 @@
             }
             const price = parseFloat(opt.dataset.price) || 0;
             const label = opt.dataset.label || opt.textContent || "";
-            const nextText = formatLevelOption(label, price, currentPrice, precision);
+            const nextText = formatLevelOption(label, price, currentPrice, rule.precision || 0);
             if (opt.textContent !== nextText) {
                 opt.textContent = nextText;
             }
@@ -2302,10 +2539,10 @@
         }
         const diffPct = ((refPrice - currentPrice) / currentPrice) * 100;
         const diffText = (diffPct >= 0 ? "+" : "") + diffPct.toFixed(2) + "%";
-        const precision = getPricePrecision(currentPositionSymbol, currentPrice);
+        const rule = getSymbolRule(currentPositionSymbol, currentPrice);
         diffEl.textContent = t("position_diff", {
-            current: formatPriceWithPrecision(currentPrice, precision),
-            level: formatPriceWithPrecision(refPrice, precision),
+            current: formatPriceByRule(currentPrice, rule),
+            level: formatPriceByRule(refPrice, rule),
             diff: diffText
         });
     }
@@ -2313,12 +2550,13 @@
     function calculatePosition() {
         const modal = $("positionModal");
         if (!modal || modal.style.display === 'none' || !currentPositionSymbol) return;
+        positionCalc = null;
 
         const ticker = tickerData.get(currentPositionSymbol);
         const currentPrice = ticker ? ticker.last_price : 0;
         const refPrice = getSelectedPositionPrice();
-        const precision = getPricePrecision(currentPositionSymbol, currentPrice);
-        const roundedCurrent = currentPrice ? snapPrice(currentPrice, precision, "round") : 0;
+        const rule = getSymbolRule(currentPositionSymbol, currentPrice);
+        const roundedCurrent = currentPrice ? snapPriceByRule(currentPrice, rule, "round") : 0;
         if (roundedCurrent && roundedCurrent !== positionLastPrice) {
             positionLastPrice = roundedCurrent;
             refreshPositionOptions(roundedCurrent);
@@ -2327,9 +2565,12 @@
 
         const entryEl = $("positionEntry");
         const stopEl = $("positionStop");
+        const takeEl = $("positionTake");
+        const takeAmountEl = $("positionTakeAmount");
         const riskEl = $("positionRisk");
         const sizeEl = $("positionSize");
         const notionalEl = $("positionNotional");
+        const marginEl = $("positionMargin");
         const errorEl = $("positionError");
 
         const setError = (msg) => {
@@ -2353,9 +2594,12 @@
                 stopEl.textContent = "-";
                 stopEl.dataset.value = "";
             }
+            if (takeEl) takeEl.textContent = "-";
+            if (takeAmountEl) takeAmountEl.textContent = "-";
             if (riskEl) riskEl.textContent = "-";
             if (sizeEl) sizeEl.textContent = "-";
             if (notionalEl) notionalEl.textContent = "-";
+            if (marginEl) marginEl.textContent = "-";
             return;
         }
 
@@ -2369,9 +2613,12 @@
                 stopEl.textContent = "-";
                 stopEl.dataset.value = "";
             }
+            if (takeEl) takeEl.textContent = "-";
+            if (takeAmountEl) takeAmountEl.textContent = "-";
             if (riskEl) riskEl.textContent = "-";
             if (sizeEl) sizeEl.textContent = "-";
             if (notionalEl) notionalEl.textContent = "-";
+            if (marginEl) marginEl.textContent = "-";
             return;
         }
 
@@ -2381,10 +2628,10 @@
         const entry = side === 'long'
             ? refPrice * (1 - offset / 100)
             : refPrice * (1 + offset / 100);
-        const entryPrice = snapPrice(entry, precision, "round");
+        const entryPrice = snapPriceByRule(entry, rule, "round");
 
         if (entryEl) {
-            const entryText = formatPriceWithPrecision(entryPrice, precision);
+            const entryText = formatPriceByRule(entryPrice, rule);
             entryEl.textContent = entryText;
             entryEl.dataset.value = entryText;
         }
@@ -2396,7 +2643,7 @@
         const stopMode = side === 'long' ? "floor" : "ceil";
 
         if (positionStopMode === 'price' && isFinite(stopPriceInput)) {
-            stopPrice = snapPrice(stopPriceInput, precision, stopMode);
+            stopPrice = snapPriceByRule(stopPriceInput, rule, stopMode);
             if (entryPrice > 0) {
                 stopPct = side === 'long'
                     ? ((entryPrice - stopPrice) / entryPrice) * 100
@@ -2408,16 +2655,16 @@
             const rawStop = side === 'long'
                 ? entryPrice * (1 - stopPct / 100)
                 : entryPrice * (1 + stopPct / 100);
-            stopPrice = snapPrice(rawStop, precision, stopMode);
-            if (isFinite(stopPrice)) $("positionStopPrice").value = formatPriceWithPrecision(stopPrice, precision);
+            stopPrice = snapPriceByRule(rawStop, rule, stopMode);
+            if (isFinite(stopPrice)) $("positionStopPrice").value = formatPriceByRule(stopPrice, rule);
         } else if (isFinite(stopPriceInput)) {
-            stopPrice = snapPrice(stopPriceInput, precision, stopMode);
+            stopPrice = snapPriceByRule(stopPriceInput, rule, stopMode);
         } else if (isFinite(stopPctInput)) {
             stopPct = stopPctInput;
             const rawStop = side === 'long'
                 ? entryPrice * (1 - stopPct / 100)
                 : entryPrice * (1 + stopPct / 100);
-            stopPrice = snapPrice(rawStop, precision, stopMode);
+            stopPrice = snapPriceByRule(rawStop, rule, stopMode);
         }
 
         if (!isFinite(stopPrice)) {
@@ -2426,59 +2673,152 @@
                 stopEl.textContent = "-";
                 stopEl.dataset.value = "";
             }
+            if (takeEl) takeEl.textContent = "-";
+            if (takeAmountEl) takeAmountEl.textContent = "-";
             if (riskEl) riskEl.textContent = "-";
             if (sizeEl) sizeEl.textContent = "-";
             if (notionalEl) notionalEl.textContent = "-";
+            if (marginEl) marginEl.textContent = "-";
             return;
         }
 
         if ((side === 'long' && stopPrice >= entryPrice) || (side === 'short' && stopPrice <= entryPrice)) {
             setError(t("position_error_invalid_stop"));
             if (stopEl) {
-                const stopText = formatPriceWithPrecision(stopPrice, precision);
+                const stopText = formatPriceByRule(stopPrice, rule);
                 stopEl.textContent = stopText;
                 stopEl.dataset.value = stopText;
             }
+            if (takeEl) takeEl.textContent = "-";
+            if (takeAmountEl) takeAmountEl.textContent = "-";
             if (riskEl) riskEl.textContent = "-";
             if (sizeEl) sizeEl.textContent = "-";
             if (notionalEl) notionalEl.textContent = "-";
+            if (marginEl) marginEl.textContent = "-";
             return;
         }
 
         const riskPerUnit = Math.abs(entryPrice - stopPrice);
         const riskPct = entryPrice > 0 ? (riskPerUnit / entryPrice) * 100 : 0;
         if (stopEl) {
-            const stopText = formatPriceWithPrecision(stopPrice, precision);
+            const stopText = formatPriceByRule(stopPrice, rule);
             stopEl.textContent = stopText;
             stopEl.dataset.value = stopText;
         }
-        if (riskEl) riskEl.textContent = `${formatPriceWithPrecision(riskPerUnit, precision)} (${riskPct.toFixed(2)}%)`;
+        if (riskEl) riskEl.textContent = `${formatPriceByRule(riskPerUnit, rule)} (${riskPct.toFixed(2)}%)`;
 
         const maxLoss = parseFloat($("positionMaxLoss").value) || 0;
         if (maxLoss <= 0) {
             setError(t("position_error_max_loss"));
             if (sizeEl) sizeEl.textContent = "-";
             if (notionalEl) notionalEl.textContent = "-";
+            if (marginEl) marginEl.textContent = "-";
+            if (takeEl) takeEl.textContent = "-";
+            if (takeAmountEl) takeAmountEl.textContent = "-";
             return;
         }
 
-        const size = riskPerUnit > 0 ? maxLoss / riskPerUnit : 0;
-        const notional = size * entryPrice;
+        const rawQty = riskPerUnit > 0 ? maxLoss / riskPerUnit : 0;
+        const qty = snapQtyByRule(rawQty, rule, "floor");
+        const notional = qty * entryPrice;
         if (sizeEl) sizeEl.textContent = formatAmount(notional) + " USDT";
         if (notionalEl) {
             const base = getBaseSymbol(currentPositionSymbol);
-            notionalEl.textContent = formatAmount(size) + (base ? " " + base : "");
+            notionalEl.textContent = formatAmount(qty) + (base ? " " + base : "");
         }
+
+        const leverageInput = parseFloat($("positionLeverage").value) || 20;
+        const leverage = leverageInput > 0 ? leverageInput : 20;
+        if (marginEl) {
+            const margin = leverage > 0 ? notional / leverage : 0;
+            marginEl.textContent = formatAmount(margin) + " USDT";
+        }
+
+        const takeAmountInput = parseFloat($("positionTakeProfit").value);
+        const takePriceInput = parseFloat($("positionTakePrice").value);
+        let takePrice = NaN;
+        let takeAmount = NaN;
+        const takeMode = side === 'long' ? "ceil" : "floor";
+
+        if (positionTakeMode === 'amount' && isFinite(takeAmountInput) && takeAmountInput > 0) {
+            takeAmount = takeAmountInput;
+            if (qty > 0) {
+                const rawTake = side === 'long'
+                    ? entryPrice + (takeAmount / qty)
+                    : entryPrice - (takeAmount / qty);
+                takePrice = snapPriceByRule(rawTake, rule, takeMode);
+                if (isFinite(takePrice)) $("positionTakePrice").value = formatPriceByRule(takePrice, rule);
+            }
+        } else if (positionTakeMode === 'price' && isFinite(takePriceInput) && takePriceInput > 0) {
+            takePrice = snapPriceByRule(takePriceInput, rule, takeMode);
+            if (qty > 0 && isFinite(takePrice)) {
+                takeAmount = Math.abs(takePrice - entryPrice) * qty;
+                $("positionTakeProfit").value = takeAmount.toFixed(2);
+            }
+        } else if (isFinite(takePriceInput) && takePriceInput > 0) {
+            takePrice = snapPriceByRule(takePriceInput, rule, takeMode);
+        } else if (isFinite(takeAmountInput) && takeAmountInput > 0) {
+            takeAmount = takeAmountInput;
+            if (qty > 0) {
+                const rawTake = side === 'long'
+                    ? entryPrice + (takeAmount / qty)
+                    : entryPrice - (takeAmount / qty);
+                takePrice = snapPriceByRule(rawTake, rule, takeMode);
+            }
+        }
+
+        if (takeEl) {
+            takeEl.textContent = isFinite(takePrice) ? formatPriceByRule(takePrice, rule) : "-";
+        }
+        if (takeAmountEl) {
+            takeAmountEl.textContent = isFinite(takeAmount) ? formatAmount(takeAmount) + " USDT" : "-";
+        }
+
+        if (isFinite(takePrice)) {
+            const invalidTake = (side === 'long' && takePrice <= entryPrice) || (side === 'short' && takePrice >= entryPrice);
+            if (invalidTake) {
+                setError(t("position_error_invalid_take"));
+                if (takeEl) takeEl.textContent = "-";
+                if (takeAmountEl) takeAmountEl.textContent = "-";
+                if (sizeEl) sizeEl.textContent = "-";
+                if (notionalEl) notionalEl.textContent = "-";
+                if (marginEl) marginEl.textContent = "-";
+                return;
+            }
+        }
+
+        positionCalc = {
+            symbol: currentPositionSymbol,
+            side,
+            entryPrice,
+            stopPrice,
+            takePrice: isFinite(takePrice) ? takePrice : null,
+            qty,
+            notional,
+            leverage,
+            rule
+        };
+
         setError("");
     }
 
-    async function showPositionModal(symbol) {
+    async function showPositionModal(symbol, presetSide) {
         currentPositionSymbol = symbol;
         const modal = $("positionModal");
         if (!modal) return;
 
         $("positionSymbol").textContent = symbol;
         positionStopMode = 'pct';
+        positionTakeMode = 'amount';
+        positionFormDirty = false;
+        const takeProfitInput = $("positionTakeProfit");
+        const takePriceInput = $("positionTakePrice");
+        if (takeProfitInput) takeProfitInput.value = "";
+        if (takePriceInput) takePriceInput.value = "";
+
+        try {
+            await loadExchangeInfo();
+        } catch (_) { }
 
         let pivotData = null;
         try {
@@ -2492,8 +2832,8 @@
         if (select) {
             const ticker = tickerData.get(symbol);
             const currentPrice = ticker ? ticker.last_price : 0;
-            const precision = getPricePrecision(symbol, currentPrice);
-            positionLastPrice = currentPrice ? snapPrice(currentPrice, precision, "round") : 0;
+            const rule = getSymbolRule(symbol, currentPrice);
+            positionLastPrice = currentPrice ? snapPriceByRule(currentPrice, rule, "round") : 0;
 
             if (currentPrice) {
                 positionLevels.push({
@@ -2507,7 +2847,7 @@
 
             const options = positionLevels.map(level => {
                 const label = level.key === POSITION_CURRENT_VALUE ? t("label_current_price") : level.label;
-                const text = formatLevelOption(label, level.price, currentPrice, precision);
+                const text = formatLevelOption(label, level.price, currentPrice, rule.precision || 0);
                 return `<option value="${level.key}" data-price="${level.price}" data-label="${label}">${text}</option>`;
             }).join("");
             select.innerHTML = options + `<option value="${POSITION_CUSTOM_VALUE}">${t("label_custom")}</option>`;
@@ -2526,14 +2866,35 @@
             }
         }
 
+        const sideBtns = document.querySelectorAll("#positionSide button");
+        if (sideBtns.length) {
+            sideBtns.forEach(btn => btn.classList.remove("active"));
+            const target = Array.from(sideBtns).find(btn => btn.dataset.side === presetSide);
+            if (target) {
+                target.classList.add("active");
+            } else {
+                sideBtns[0].classList.add("active");
+            }
+        }
+
+        setOrderStatus("order_status_ready");
+        updateApiStatus();
         modal.style.display = 'flex';
         calculatePosition();
     }
 
-    function hidePositionModal() {
+    function confirmClosePositionModal() {
+        if (!positionFormDirty) return true;
+        return confirm(t("confirm_close_position"));
+    }
+
+    function hidePositionModal(force = false) {
         const modal = $("positionModal");
-        if (modal) modal.style.display = 'none';
+        if (!modal) return;
+        if (!force && modal.style.display !== 'none' && !confirmClosePositionModal()) return;
+        modal.style.display = 'none';
         currentPositionSymbol = null;
+        positionFormDirty = false;
     }
 
     function setupPositionModal() {
@@ -2563,6 +2924,7 @@
             btn.onclick = () => {
                 sideBtns.forEach(b => b.classList.remove("active"));
                 btn.classList.add("active");
+                positionFormDirty = true;
                 calculatePosition();
             };
         });
@@ -2574,23 +2936,67 @@
                 if (customInput) {
                     customInput.style.display = select.value === POSITION_CUSTOM_VALUE ? '' : 'none';
                 }
+                positionFormDirty = true;
                 calculatePosition();
             };
         }
         if (customInput) {
-            customInput.oninput = () => calculatePosition();
+            customInput.oninput = () => {
+                positionFormDirty = true;
+                calculatePosition();
+            };
         }
 
-        $("positionOffset").oninput = () => calculatePosition();
+        $("positionOffset").oninput = () => {
+            positionFormDirty = true;
+            calculatePosition();
+        };
         $("positionStopPct").oninput = () => {
             positionStopMode = 'pct';
+            positionFormDirty = true;
             calculatePosition();
         };
         $("positionStopPrice").oninput = () => {
             positionStopMode = 'price';
+            positionFormDirty = true;
             calculatePosition();
         };
-        $("positionMaxLoss").oninput = () => calculatePosition();
+        const takeProfitInput = $("positionTakeProfit");
+        const takePriceInput = $("positionTakePrice");
+        if (takeProfitInput) {
+            takeProfitInput.oninput = () => {
+                positionTakeMode = 'amount';
+                positionFormDirty = true;
+                calculatePosition();
+            };
+        }
+        if (takePriceInput) {
+            takePriceInput.oninput = () => {
+                positionTakeMode = 'price';
+                positionFormDirty = true;
+                calculatePosition();
+            };
+        }
+        $("positionMaxLoss").oninput = () => {
+            positionFormDirty = true;
+            calculatePosition();
+        };
+        const leverageInput = $("positionLeverage");
+        if (leverageInput) {
+            leverageInput.oninput = () => {
+                try {
+                    localStorage.setItem(STORAGE_KEYS.positionLeverage, leverageInput.value);
+                } catch (_) { }
+                positionFormDirty = true;
+                calculatePosition();
+            };
+        }
+
+        const apiBtn = $("positionApiBtn");
+        if (apiBtn) apiBtn.onclick = showApiModal;
+
+        const orderBtn = $("positionOrderBtn");
+        if (orderBtn) orderBtn.onclick = placeOrderFromPosition;
     }
 
     function updatePositionModalIfOpen() {
@@ -2601,9 +3007,431 @@
 
     window.hidePositionModal = hidePositionModal;
 
+    function showApiModal() {
+        const modal = $("apiModal");
+        if (!modal) return;
+        const { apiKey, apiSecret } = getApiKeys();
+        const keyInput = $("apiKeyInput");
+        const secretInput = $("apiSecretInput");
+        if (keyInput) keyInput.value = apiKey || "";
+        if (secretInput) secretInput.value = apiSecret || "";
+        apiFormSnapshot = { apiKey: keyInput ? keyInput.value : "", apiSecret: secretInput ? secretInput.value : "" };
+        modal.style.display = 'flex';
+    }
+
+    function isApiModalDirty() {
+        const keyInput = $("apiKeyInput");
+        const secretInput = $("apiSecretInput");
+        const key = keyInput ? keyInput.value.trim() : "";
+        const secret = secretInput ? secretInput.value.trim() : "";
+        return key !== (apiFormSnapshot.apiKey || "") || secret !== (apiFormSnapshot.apiSecret || "");
+    }
+
+    function confirmCloseApiModal() {
+        if (!isApiModalDirty()) return true;
+        return confirm(t("confirm_close_api"));
+    }
+
+    function hideApiModal(force = false) {
+        const modal = $("apiModal");
+        if (!modal) return;
+        if (!force && modal.style.display !== 'none' && !confirmCloseApiModal()) return;
+        modal.style.display = 'none';
+    }
+
+    function setupApiModal() {
+        const modal = $("apiModal");
+        if (!modal) return;
+        modal.onclick = (e) => {
+            if (e.target === modal) hideApiModal();
+        };
+        const saveBtn = $("apiSaveBtn");
+        if (saveBtn) {
+            saveBtn.onclick = () => {
+                const key = $("apiKeyInput").value.trim();
+                const secret = $("apiSecretInput").value.trim();
+                setApiKeys(key, secret);
+                hideApiModal(true);
+            };
+        }
+        const clearBtn = $("apiClearBtn");
+        if (clearBtn) {
+            clearBtn.onclick = () => {
+                $("apiKeyInput").value = "";
+                $("apiSecretInput").value = "";
+                clearApiKeys();
+                hideApiModal(true);
+            };
+        }
+    }
+
+    window.hideApiModal = hideApiModal;
+
+    function setOrderStatus(messageKey, type = "") {
+        const statusEl = $("positionOrderStatus");
+        if (!statusEl) return;
+        statusEl.textContent = messageKey ? t(messageKey) : "";
+        statusEl.classList.remove("success", "error");
+        if (type) statusEl.classList.add(type);
+        statusEl.style.display = messageKey ? 'block' : 'none';
+    }
+
+    function setOrderStatusError(msg) {
+        const statusEl = $("positionOrderStatus");
+        if (!statusEl) return;
+        statusEl.textContent = t("order_status_failed", { msg });
+        statusEl.classList.remove("success");
+        statusEl.classList.add("error");
+        statusEl.style.display = 'block';
+    }
+
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    const hasWebCrypto = () => {
+        return !!(window.crypto && window.crypto.subtle && window.crypto.subtle.importKey);
+    };
+
+    const stringToBytes = (str) => {
+        const out = [];
+        for (let i = 0; i < str.length; i++) out.push(str.charCodeAt(i) & 0xff);
+        return out;
+    };
+
+    const bytesToString = (bytes) => {
+        let out = "";
+        for (let i = 0; i < bytes.length; i++) out += String.fromCharCode(bytes[i]);
+        return out;
+    };
+
+    const hexToBytes = (hex) => {
+        const out = [];
+        for (let i = 0; i < hex.length; i += 2) {
+            out.push(parseInt(hex.substr(i, 2), 16));
+        }
+        return out;
+    };
+
+    const rightRotate = (value, amount) => (value >>> amount) | (value << (32 - amount));
+
+    function sha256Hex(ascii) {
+        const maxWord = Math.pow(2, 32);
+        const words = [];
+        const asciiBitLength = ascii.length * 8;
+        let hash = sha256Hex.h = sha256Hex.h || [];
+        let k = sha256Hex.k = sha256Hex.k || [];
+        let primeCounter = k.length;
+        const isComposite = {};
+
+        for (let candidate = 2; primeCounter < 64; candidate++) {
+            if (!isComposite[candidate]) {
+                for (let i = 0; i < 313; i += candidate) {
+                    isComposite[i] = candidate;
+                }
+                hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+                k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+            }
+        }
+
+        ascii += "\x80";
+        while (ascii.length % 64 - 56) ascii += "\x00";
+        for (let i = 0; i < ascii.length; i++) {
+            const j = ascii.charCodeAt(i);
+            if (j >> 8) return;
+            words[i >> 2] |= j << ((3 - i) % 4) * 8;
+        }
+        words[words.length] = (asciiBitLength / maxWord) | 0;
+        words[words.length] = asciiBitLength;
+
+        for (let j = 0; j < words.length;) {
+            const w = words.slice(j, j += 16);
+            const oldHash = hash;
+            hash = hash.slice(0);
+
+            for (let i = 0; i < 64; i++) {
+                const w15 = w[i - 15], w2 = w[i - 2];
+                const a = hash[0], e = hash[4];
+                const temp1 = hash[7]
+                    + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+                    + ((e & hash[5]) ^ ((~e) & hash[6]))
+                    + k[i]
+                    + (w[i] = (i < 16) ? w[i] : (
+                        w[i - 16]
+                        + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+                        + w[i - 7]
+                        + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+                    ) | 0);
+                const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+                    + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+
+                hash = [(temp1 + temp2) | 0].concat(hash);
+                hash[4] = (hash[4] + temp1) | 0;
+            }
+
+            for (let i = 0; i < 8; i++) {
+                hash[i] = (hash[i] + oldHash[i]) | 0;
+            }
+        }
+
+        let result = "";
+        for (let i = 0; i < 8; i++) {
+            for (let j = 3; j + 1; j--) {
+                const b = (hash[i] >> (j * 8)) & 255;
+                result += (b < 16 ? "0" : "") + b.toString(16);
+            }
+        }
+        return result;
+    }
+
+    function hmacSha256(key, message) {
+        const blockSize = 64;
+        let keyBytes = stringToBytes(key);
+        if (keyBytes.length > blockSize) {
+            keyBytes = hexToBytes(sha256Hex(bytesToString(keyBytes)));
+        }
+        if (keyBytes.length < blockSize) {
+            const padded = new Array(blockSize).fill(0);
+            for (let i = 0; i < keyBytes.length; i++) padded[i] = keyBytes[i];
+            keyBytes = padded;
+        }
+
+        const oKey = keyBytes.map(b => b ^ 0x5c);
+        const iKey = keyBytes.map(b => b ^ 0x36);
+        const inner = sha256Hex(bytesToString(iKey) + message);
+        const innerBytes = hexToBytes(inner);
+        return sha256Hex(bytesToString(oKey) + bytesToString(innerBytes));
+    }
+
+    async function syncBinanceTime() {
+        const r = await fetch(BINANCE_TIME_URL, { cache: "no-store" });
+        if (!r.ok) throw new Error("time " + r.status);
+        const data = await r.json();
+        if (!data || !data.serverTime) throw new Error("time invalid");
+        binanceTimeOffset = data.serverTime - Date.now();
+    }
+
+    async function signQuery(query, secret) {
+        if (hasWebCrypto()) {
+            try {
+                const enc = new TextEncoder();
+                const key = await crypto.subtle.importKey(
+                    "raw",
+                    enc.encode(secret),
+                    { name: "HMAC", hash: "SHA-256" },
+                    false,
+                    ["sign"]
+                );
+                const sig = await crypto.subtle.sign("HMAC", key, enc.encode(query));
+                return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+            } catch (_) {
+                return hmacSha256(secret, query);
+            }
+        }
+        return hmacSha256(secret, query);
+    }
+
+    async function binanceRequest(method, path, params = {}, signed = false) {
+        const { apiKey, apiSecret } = getApiKeys();
+        if (signed && (!apiKey || !apiSecret)) {
+            throw new Error("API key missing");
+        }
+        const payload = { ...params };
+        if (signed) {
+            payload.timestamp = Date.now() + binanceTimeOffset;
+            payload.recvWindow = BINANCE_RECV_WINDOW;
+        }
+        let query = new URLSearchParams(payload).toString();
+        if (signed) {
+            const signature = await signQuery(query, apiSecret);
+            query = query ? `${query}&signature=${signature}` : `signature=${signature}`;
+        }
+        const url = `${BINANCE_API_BASE}${path}${query ? "?" + query : ""}`;
+        const headers = {};
+        if (signed) headers["X-MBX-APIKEY"] = apiKey;
+        if (method !== "GET") headers["Content-Type"] = "application/x-www-form-urlencoded";
+        const r = await fetch(url, { method, headers });
+        const text = await r.text();
+        if (!r.ok) {
+            let msg = text;
+            try {
+                const data = JSON.parse(text);
+                msg = data.msg || data.code || text;
+            } catch (_) { }
+            throw new Error(msg);
+        }
+        try {
+            return JSON.parse(text);
+        } catch (_) {
+            return {};
+        }
+    }
+
+    async function setLeverage(symbol, leverage) {
+        return binanceRequest("POST", "/fapi/v1/leverage", { symbol, leverage }, true);
+    }
+
+    async function placeLimitOrder(symbol, side, price, quantity) {
+        return binanceRequest("POST", "/fapi/v1/order", {
+            symbol,
+            side,
+            type: "LIMIT",
+            timeInForce: "GTC",
+            price,
+            quantity
+        }, true);
+    }
+
+    async function placeStopMarket(symbol, side, stopPrice, quantity) {
+        return binanceRequest("POST", "/fapi/v1/algoOrder", {
+            algoType: "CONDITIONAL",
+            symbol,
+            side,
+            type: "STOP_MARKET",
+            triggerPrice: stopPrice,
+            quantity,
+            reduceOnly: "true",
+            workingType: "MARK_PRICE"
+        }, true);
+    }
+
+    async function placeTakeProfitMarket(symbol, side, stopPrice, quantity) {
+        return binanceRequest("POST", "/fapi/v1/algoOrder", {
+            algoType: "CONDITIONAL",
+            symbol,
+            side,
+            type: "TAKE_PROFIT_MARKET",
+            triggerPrice: stopPrice,
+            quantity,
+            reduceOnly: "true",
+            workingType: "MARK_PRICE"
+        }, true);
+    }
+
+    async function fetchOrderStatus(symbol, orderId) {
+        return binanceRequest("GET", "/fapi/v1/order", { symbol, orderId }, true);
+    }
+
+    async function waitOrderFilled(symbol, orderId) {
+        const maxTries = 60;
+        for (let i = 0; i < maxTries; i++) {
+            const data = await fetchOrderStatus(symbol, orderId);
+            if (data.status === "FILLED") return data;
+            if (data.status === "CANCELED" || data.status === "REJECTED" || data.status === "EXPIRED") {
+                throw new Error("order " + data.status);
+            }
+            await sleep(1000);
+        }
+        throw new Error("order timeout");
+    }
+
+    async function placeOrderFromPosition() {
+        const orderBtn = $("positionOrderBtn");
+        if (orderBtn) orderBtn.disabled = true;
+        const { apiKey, apiSecret } = getApiKeys();
+        if (!apiKey || !apiSecret) {
+            setOrderStatusError(t("order_error_no_api"));
+            if (orderBtn) orderBtn.disabled = false;
+            return;
+        }
+        if (!positionCalc) {
+            setOrderStatusError(t("order_error_no_calc"));
+            if (orderBtn) orderBtn.disabled = false;
+            return;
+        }
+
+        const {
+            symbol,
+            side,
+            entryPrice,
+            stopPrice,
+            takePrice,
+            qty,
+            notional,
+            leverage,
+            rule
+        } = positionCalc;
+
+        if (typeof stopPrice !== "number" || !isFinite(stopPrice) || stopPrice <= 0) {
+            setOrderStatusError(t("position_error_no_stop"));
+            if (orderBtn) orderBtn.disabled = false;
+            return;
+        }
+        if (typeof takePrice !== "number" || !isFinite(takePrice) || takePrice <= 0) {
+            setOrderStatusError(t("position_error_no_take"));
+            if (orderBtn) orderBtn.disabled = false;
+            return;
+        }
+        if (!qty || qty <= 0) {
+            setOrderStatusError(t("order_error_qty"));
+            if (orderBtn) orderBtn.disabled = false;
+            return;
+        }
+
+        const minQty = rule.minQty || 0;
+        if (minQty && qty < minQty) {
+            setOrderStatusError(t("order_error_min_qty"));
+            if (orderBtn) orderBtn.disabled = false;
+            return;
+        }
+        const minNotional = rule.minNotional || 0;
+        if (minNotional && notional < minNotional) {
+            setOrderStatusError(t("order_error_min_notional"));
+            if (orderBtn) orderBtn.disabled = false;
+            return;
+        }
+
+        const entrySide = side === "long" ? "BUY" : "SELL";
+        const closeSide = side === "long" ? "SELL" : "BUY";
+        const qtySnap = snapQtyByRule(qty, rule, "floor");
+        const qtyStr = formatQtyByRule(qtySnap, rule);
+        const priceStr = formatPriceByRule(entryPrice, rule);
+        const stopStr = formatPriceByRule(stopPrice, rule);
+        const takeStr = formatPriceByRule(takePrice, rule);
+
+        let stage = "entry";
+        try {
+            setOrderStatus("order_status_set_leverage");
+            await syncBinanceTime();
+            await setLeverage(symbol, Math.max(1, Math.round(leverage)));
+
+            setOrderStatus("order_status_place_entry");
+            await placeLimitOrder(symbol, entrySide, priceStr, qtyStr);
+
+            stage = "stop";
+            setOrderStatus("order_status_place_stop");
+            await placeStopMarket(symbol, closeSide, stopStr, qtyStr);
+
+            stage = "take";
+            setOrderStatus("order_status_place_take");
+            await placeTakeProfitMarket(symbol, closeSide, takeStr, qtyStr);
+
+            setOrderStatus("order_status_success", "success");
+            positionFormDirty = false;
+        } catch (err) {
+            const msg = err && err.message ? err.message : "error";
+            if (stage === "entry") {
+                setOrderStatusError(t("order_error_entry_failed", { msg }));
+            } else if (stage === "stop") {
+                setOrderStatusError(t("order_error_stop_failed", { msg }));
+            } else {
+                setOrderStatusError(t("order_error_take_failed", { msg }));
+            }
+        } finally {
+            if (orderBtn) orderBtn.disabled = false;
+        }
+    }
+
     // ==================== Kline 预览 ====================
+    const BINANCE_API_BASE = "https://fapi.binance.com";
     const BINANCE_PING_URL = "https://fapi.binance.com/fapi/v1/ping";
     const BINANCE_KLINE_URL = "https://fapi.binance.com/fapi/v1/klines";
+    const BINANCE_EXCHANGE_INFO_URL = "https://fapi.binance.com/fapi/v1/exchangeInfo";
+    const BINANCE_TIME_URL = "https://fapi.binance.com/fapi/v1/time";
+    const BINANCE_RECV_WINDOW = 5000;
+    const EXCHANGE_INFO_TTL = 6 * 60 * 60 * 1000;
+    let exchangeInfoMap = new Map();
+    let exchangeInfoLoadedAt = 0;
+    let exchangeInfoPromise = null;
+    let binanceTimeOffset = 0;
     const KLINE_INTERVALS = ["1m", "5m", "15m", "1h", "4h", "1d"];
     const KLINE_INTERVAL_MS = {
         "1m": 60 * 1000,
@@ -3017,8 +3845,10 @@
         showSignalsBtn.style.display = menuFromRanking ? '' : 'none';
 
         menu.classList.add("show");
-        const x = Math.min(e.clientX, window.innerWidth - 200);
-        const y = Math.min(e.clientY, window.innerHeight - 220);
+        const menuWidth = menu.offsetWidth || 200;
+        const menuHeight = menu.offsetHeight || 220;
+        const x = Math.min(e.clientX, window.innerWidth - menuWidth - 8);
+        const y = Math.min(e.clientY, window.innerHeight - menuHeight - 8);
         menu.style.left = x + "px";
         menu.style.top = y + "px";
     }
@@ -3107,8 +3937,12 @@
                         showPivotPreview(menuSymbol);
                         break;
 
-                    case "position":
-                        showPositionModal(menuSymbol);
+                    case "position_long":
+                        showPositionModal(menuSymbol, "long");
+                        break;
+
+                    case "position_short":
+                        showPositionModal(menuSymbol, "short");
                         break;
 
                     case "kline":
@@ -3932,8 +4766,25 @@
     // iOS PWA 真实视口高度设置
     let initialVh = 0; // 记录初始视口高度
 
+    function isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function isStandaloneMode() {
+        return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+            window.navigator.standalone === true;
+    }
+
+    function getViewportHeight() {
+        if (isStandaloneMode()) {
+            return window.innerHeight || document.documentElement.clientHeight;
+        }
+        return window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    }
+
     function setVh() {
-        const vh = (window.visualViewport?.height || window.innerHeight) * 0.01;
+        const vh = getViewportHeight() * 0.01;
         // 首次设置时记录初始高度
         if (initialVh === 0) {
             initialVh = vh;
@@ -3944,18 +4795,42 @@
     function calcScrollHeight() {
         const headerArea = document.querySelector('.header-area');
         const footerStats = $("footerStats");
+        const scrollArea = document.querySelector('.scroll-area');
         if (!headerArea) return;
 
         const headerHeight = headerArea.offsetHeight;
-        const footerHeight = footerStats ? footerStats.offsetHeight : 40;
+        const standaloneIos = document.body.classList.contains('ios-standalone');
+        const footerHeight = footerStats ? footerStats.getBoundingClientRect().height : 0;
 
-        // 使用 visualViewport 获取真实可视高度（iOS PWA 兼容）
-        const viewportHeight = window.visualViewport
-            ? window.visualViewport.height
-            : window.innerHeight;
+        // 使用真实布局高度优先，避免 iOS PWA 计算偏差
+        const viewportHeight = getViewportHeight();
+        let containerHeight = 0;
+        if (scrollArea && scrollArea.style.display !== 'none') {
+            containerHeight = scrollArea.getBoundingClientRect().height;
+        }
+        if (!containerHeight || !isFinite(containerHeight)) {
+            containerHeight = Math.max(0, viewportHeight - headerHeight);
+        }
 
-        // 考虑底部栏高度
-        const availableHeight = Math.max(200, viewportHeight - headerHeight - footerHeight - 8);
+        const banner = $("signalNewBanner");
+        const bannerHeight = (banner && banner.style.display !== 'none') ? banner.offsetHeight + 8 : 0;
+
+        // 记录 footer 高度用于滚动区底部留白
+        document.documentElement.style.setProperty('--footer-h', `${footerHeight}px`);
+
+        // 以实际布局位置计算可用高度（iOS PWA 更稳定）
+        let layoutHeight = 0;
+        if (!standaloneIos && scrollArea && scrollArea.style.display !== 'none' && footerStats) {
+            const scrollTop = scrollArea.getBoundingClientRect().top;
+            const footerTop = footerStats.getBoundingClientRect().top;
+            if (isFinite(scrollTop) && isFinite(footerTop)) {
+                layoutHeight = footerTop - scrollTop - 8;
+            }
+        }
+
+        const baseHeight = (layoutHeight && layoutHeight > 100) ? layoutHeight : containerHeight;
+        // 只扣除头部与可见 banner，高度适配 iOS 视口
+        const availableHeight = Math.max(200, baseHeight - bannerHeight - 8);
 
         $("signalScroll").style.height = availableHeight + 'px';
         $("patternScroll").style.height = availableHeight + 'px';
@@ -3969,7 +4844,7 @@
 
     // iOS 键盘收起后恢复布局
     function handleViewportResize() {
-        const currentVh = (window.visualViewport?.height || window.innerHeight) * 0.01;
+        const currentVh = getViewportHeight() * 0.01;
 
         // 如果视口高度恢复到接近初始值，说明键盘收起了
         if (initialVh > 0 && currentVh >= initialVh * 0.95) {
@@ -3985,6 +4860,9 @@
     function init() {
         // 立即设置 --vh 变量（iOS PWA 关键）
         setVh();
+        if (isStandaloneMode() && isIOSDevice()) {
+            document.body.classList.add('ios-standalone');
+        }
 
         applyI18n();
         loadSettings();
@@ -3999,6 +4877,7 @@
         setupPatternModal();
         setupRankingModal();
         setupPositionModal();
+        setupApiModal();
         setupKlineModal();
         initClusterize();
         setupSignalNewBanner();
@@ -4036,6 +4915,17 @@
         const runtimeStats = $("runtimeStats");
         if (runtimeStats) {
             runtimeStats.onclick = loadRuntimeStats;
+        }
+
+        const recalcBtn = $("recalcHeight");
+        if (recalcBtn) {
+            recalcBtn.onclick = () => {
+                setVh();
+                handleViewportResize();
+                requestAnimationFrame(() => {
+                    calcScrollHeight();
+                });
+            };
         }
 
         // Refresh 按钮
