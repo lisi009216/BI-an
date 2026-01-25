@@ -377,6 +377,10 @@
             <div class="modal-header">
                 <span id="positionSymbol" class="symbol"></span>
                 <span class="pattern-name" data-i18n="position_title">仓位计算</span>
+                <div class="position-kline-switch" id="positionKlineSwitch">
+                    <button type="button" data-view="position" class="active" data-i18n="position_tab">仓位</button>
+                    <button type="button" data-view="kline" data-i18n="kline_tab">K线</button>
+                </div>
                 <button class="close-btn" onclick="hidePositionModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -561,6 +565,10 @@
             <div class="modal-header">
                 <span id="klineSymbol" class="symbol"></span>
                 <span class="pattern-name" id="klineIntervalLabel" data-i18n="kline_title">K线预览</span>
+                <div class="position-kline-switch" id="klineKlineSwitch">
+                    <button type="button" data-view="position" data-i18n="position_tab">仓位</button>
+                    <button type="button" data-view="kline" class="active" data-i18n="kline_tab">K线</button>
+                </div>
                 <button class="close-btn" onclick="hideKlineModal()">&times;</button>
             </div>
             <div class="kline-toolbar">
@@ -568,7 +576,13 @@
                     <span data-i18n="kline_interval">周期</span>
                     <span id="klineIntervalText" class="tag">-</span>
                 </div>
-                <div id="klineIntervals" class="kline-intervals"></div>
+                <div class="kline-toolbar-right">
+                    <div id="klineIntervals" class="kline-intervals"></div>
+                    <div class="kline-mode-switch" id="klineModeSwitch">
+                        <button type="button" data-mode="line" class="active" data-i18n="kline_mode_line">线</button>
+                        <button type="button" data-mode="candle" data-i18n="kline_mode_candle">蜡烛</button>
+                    </div>
+                </div>
             </div>
             <div class="kline-chart">
                 <canvas id="klineCanvas"></canvas>

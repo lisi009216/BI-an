@@ -87,6 +87,8 @@
             action_show_signals: "📊 查看信号",
             action_kline_preview: "K线预览",
             position_title: "仓位计算",
+            position_tab: "仓位",
+            kline_tab: "K线",
             position_direction: "方向",
             position_long: "做多",
             position_short: "做空",
@@ -219,7 +221,9 @@
             kline_no_data: "暂无K线数据",
             kline_price: "价格",
             kline_time: "时间",
-            kline_click_load: "点击时间轴加载该时间段"
+            kline_click_load: "点击时间轴加载该时间段",
+            kline_mode_line: "线",
+            kline_mode_candle: "蜡烛"
         },
         en: {
             app_title: "Pivot Monitor",
@@ -302,6 +306,8 @@
             action_show_signals: "📊 Show Signals",
             action_kline_preview: "Kline Preview",
             position_title: "Position Calc",
+            position_tab: "Position",
+            kline_tab: "Kline",
             position_direction: "Direction",
             position_long: "Long",
             position_short: "Short",
@@ -434,7 +440,9 @@
             kline_no_data: "No kline data",
             kline_price: "Price",
             kline_time: "Time",
-            kline_click_load: "Click the time axis to load around that point"
+            kline_click_load: "Click the time axis to load around that point",
+            kline_mode_line: "Line",
+            kline_mode_candle: "Candles"
         }
     };
 
@@ -646,6 +654,10 @@
     let positionTakeMode = 'amount'; // 'amount' or 'price'
     let positionCalc = null;
     let positionFormDirty = false;
+    const POSITION_KLINE_MEDIA = window.matchMedia("(min-width: 1201px)");
+    let positionKlineLinked = false;
+    let positionKlineView = "position";
+    let positionKlineWasWide = null;
     let apiFormSnapshot = { apiKey: "", apiSecret: "" };
     let pendingSignalCount = 0; // 滚动期间积压的新信号数
     const SIGNAL_SCROLL_THRESHOLD = 8;
@@ -2802,8 +2814,73 @@
         setError("");
     }
 
+    function updatePositionKlineSwitches(view) {
+        document.querySelectorAll("#positionKlineSwitch button, #klineKlineSwitch button").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.view === view);
+        });
+    }
+
+    function clearPositionKlineLink() {
+        positionKlineLinked = false;
+        positionKlineView = "position";
+        positionKlineWasWide = null;
+        document.body.classList.remove("position-kline-split", "position-kline-mobile");
+    }
+
+    function setPositionKlineView(view) {
+        positionKlineView = view === "kline" ? "kline" : "position";
+        updatePositionKlineSwitches(positionKlineView);
+
+        if (!positionKlineLinked) return;
+
+        if (POSITION_KLINE_MEDIA.matches) {
+            const positionModal = $("positionModal");
+            if (positionModal) positionModal.style.display = "flex";
+            if (currentPositionSymbol) {
+                showKlineModal(currentPositionSymbol, currentKlineInterval, true);
+            }
+            return;
+        }
+
+        const positionModal = $("positionModal");
+        const klineModal = $("klineModal");
+        if (positionKlineView === "position") {
+            if (klineModal) klineModal.style.display = "none";
+            if (positionModal) positionModal.style.display = "flex";
+        } else {
+            if (positionModal) positionModal.style.display = "none";
+            if (currentPositionSymbol) {
+                showKlineModal(currentPositionSymbol, currentKlineInterval, true);
+            }
+        }
+    }
+
+    function syncPositionKlineLayout() {
+        if (!positionKlineLinked) return;
+        const isWide = POSITION_KLINE_MEDIA.matches;
+        positionKlineWasWide = isWide;
+
+        if (isWide) {
+            document.body.classList.add("position-kline-split");
+            document.body.classList.remove("position-kline-mobile");
+            const positionModal = $("positionModal");
+            if (positionModal) positionModal.style.display = "flex";
+            if (currentPositionSymbol) {
+                showKlineModal(currentPositionSymbol, currentKlineInterval, true);
+            }
+            return;
+        }
+
+        document.body.classList.remove("position-kline-split");
+        document.body.classList.add("position-kline-mobile");
+        setPositionKlineView(positionKlineView || "position");
+    }
+
     async function showPositionModal(symbol, presetSide) {
         currentPositionSymbol = symbol;
+        positionKlineLinked = true;
+        positionKlineView = "position";
+        updatePositionKlineSwitches(positionKlineView);
         const modal = $("positionModal");
         if (!modal) return;
 
@@ -2881,6 +2958,7 @@
         updateApiStatus();
         modal.style.display = 'flex';
         calculatePosition();
+        syncPositionKlineLayout();
     }
 
     function confirmClosePositionModal() {
@@ -2893,6 +2971,12 @@
         if (!modal) return;
         if (!force && modal.style.display !== 'none' && !confirmClosePositionModal()) return;
         modal.style.display = 'none';
+        if (positionKlineLinked) {
+            const klineModal = $("klineModal");
+            if (klineModal) klineModal.style.display = 'none';
+            currentKlineSymbol = null;
+            clearPositionKlineLink();
+        }
         currentPositionSymbol = null;
         positionFormDirty = false;
     }
@@ -2997,6 +3081,25 @@
 
         const orderBtn = $("positionOrderBtn");
         if (orderBtn) orderBtn.onclick = placeOrderFromPosition;
+
+        const switchButtons = document.querySelectorAll("#positionKlineSwitch button");
+        switchButtons.forEach(btn => {
+            btn.onclick = () => {
+                if (!positionKlineLinked) return;
+                setPositionKlineView(btn.dataset.view);
+            };
+        });
+
+        if (POSITION_KLINE_MEDIA) {
+            const handler = () => {
+                if (positionKlineLinked) syncPositionKlineLayout();
+            };
+            if (POSITION_KLINE_MEDIA.addEventListener) {
+                POSITION_KLINE_MEDIA.addEventListener("change", handler);
+            } else if (POSITION_KLINE_MEDIA.addListener) {
+                POSITION_KLINE_MEDIA.addListener(handler);
+            }
+        }
     }
 
     function updatePositionModalIfOpen() {
@@ -3443,6 +3546,12 @@
     };
     const KLINE_LIMIT = 160;
     const KLINE_CACHE_TTL = 45 * 1000;
+    const KLINE_MODE_KEY = "pivot_kline_mode";
+    const KLINE_ZOOM_MIN = 0.6;
+    const KLINE_ZOOM_MAX = 3.2;
+    const KLINE_ZOOM_X_MIN = 1;
+    const KLINE_ZOOM_X_MAX = 6;
+    const KLINE_MIN_POINTS = 40;
     let binanceAvailable = false;
     let binanceChecked = false;
     let binanceCheckPromise = null;
@@ -3452,8 +3561,20 @@
     let currentKlineCenterTime = null;
     let currentKlinePivotData = null;
     let klineHoverIndex = null;
+    let klineHoverPrice = null;
+    let klineHoverActive = false;
+    let klineZoom = 1;
+    let klineZoomX = 1;
+    let klinePinchDist = null;
     let klineFetchController = null;
     const klineCache = new Map();
+    let klineChartMode = "line";
+    try {
+        const savedMode = localStorage.getItem(KLINE_MODE_KEY);
+        if (savedMode === "line" || savedMode === "candle") {
+            klineChartMode = savedMode;
+        }
+    } catch (_) { }
 
     async function checkBinanceAvailability() {
         if (binanceCheckPromise) return binanceCheckPromise;
@@ -3496,6 +3617,77 @@
         });
     }
 
+    function updateKlineModeSwitch() {
+        document.querySelectorAll("#klineModeSwitch button").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.mode === klineChartMode);
+        });
+    }
+
+    function setKlineChartMode(mode) {
+        klineChartMode = mode === "candle" ? "candle" : "line";
+        updateKlineModeSwitch();
+        try {
+            localStorage.setItem(KLINE_MODE_KEY, klineChartMode);
+        } catch (_) { }
+        drawKlineChart();
+    }
+
+    function getKlineCandleColors() {
+        const style = getComputedStyle(document.documentElement);
+        const up = style.getPropertyValue("--buy").trim() || "#0ECB81";
+        const down = style.getPropertyValue("--sell").trim() || "#F6465D";
+        return { up, down };
+    }
+
+    function getKlineWindow() {
+        const total = currentKlineData.length;
+        if (total < 2) {
+            return { data: currentKlineData.slice(), start: 0, end: total - 1, total };
+        }
+        const target = Math.round(total / klineZoomX);
+        const windowSize = Math.min(total, Math.max(KLINE_MIN_POINTS, target));
+        const start = Math.max(0, total - windowSize);
+        const end = start + windowSize - 1;
+        return { data: currentKlineData.slice(start, end + 1), start, end, total };
+    }
+
+    function computeKlineScale(rect, data) {
+        if (!rect || !data || data.length < 2) return null;
+        const values = klineChartMode === "candle"
+            ? data.flatMap(d => [d.low, d.high])
+            : data.map(d => d.close);
+        let minVal = Math.min(...values);
+        let maxVal = Math.max(...values);
+        if (!isFinite(minVal) || !isFinite(maxVal)) return null;
+        const paddingRange = (maxVal - minVal) * 0.08 || 1;
+        minVal -= paddingRange;
+        maxVal += paddingRange;
+        if (klineZoom !== 1) {
+            const center = (minVal + maxVal) / 2;
+            const range = (maxVal - minVal) / klineZoom;
+            minVal = center - range / 2;
+            maxVal = center + range / 2;
+        }
+        const padding = { left: 44, right: 12, top: 12, bottom: 24 };
+        const width = rect.width - padding.left - padding.right;
+        const height = rect.height - padding.top - padding.bottom;
+        return { minVal, maxVal, padding, width, height, rect };
+    }
+
+    function applyKlineZoom(factor) {
+        const next = Math.max(KLINE_ZOOM_MIN, Math.min(KLINE_ZOOM_MAX, klineZoom * factor));
+        if (next === klineZoom) return;
+        klineZoom = next;
+        drawKlineChart();
+    }
+
+    function applyKlineZoomX(factor) {
+        const next = Math.max(KLINE_ZOOM_X_MIN, Math.min(KLINE_ZOOM_X_MAX, klineZoomX * factor));
+        if (next === klineZoomX) return;
+        klineZoomX = next;
+        drawKlineChart();
+    }
+
     function fmtKlineTime(ts) {
         try {
             const d = new Date(ts);
@@ -3522,23 +3714,77 @@
         meta.textContent = `${priceText}  ${timeText}`;
     }
 
-    function getKlinePivotLines() {
-        if (!currentKlinePivotData) return [];
+    function getKlinePivotLines(rangeMin, rangeMax) {
+        if (!currentKlinePivotData || !currentKlineData.length) return [];
         const ticker = tickerData.get(currentKlineSymbol);
-        const lastPoint = currentKlineData.length ? currentKlineData[currentKlineData.length - 1] : null;
+        const lastPoint = currentKlineData[currentKlineData.length - 1];
         const currentPrice = ticker ? ticker.last_price : (lastPoint ? lastPoint.close : 0);
-        if (!currentPrice) return [];
 
-        const daily = findNearestLevels(currentKlinePivotData, currentPrice, '1d');
-        const weekly = findNearestLevels(currentKlinePivotData, currentPrice, '1w');
-        const lines = [];
+        if (!isFinite(rangeMin) || !isFinite(rangeMax)) return [];
+        const range = rangeMax - rangeMin || 1;
+        const buffer = range * 0.08;
+        const viewMin = rangeMin - buffer;
+        const viewMax = rangeMax + buffer;
+        const refPrice = currentPrice || (rangeMin + rangeMax) / 2;
 
-        if (daily.above) lines.push({ price: daily.above.price, label: `D:${daily.above.name}`, type: 'resistance' });
-        if (daily.below) lines.push({ price: daily.below.price, label: `D:${daily.below.name}`, type: 'support' });
-        if (weekly.above) lines.push({ price: weekly.above.price, label: `W:${weekly.above.name}`, type: 'resistance' });
-        if (weekly.below) lines.push({ price: weekly.below.price, label: `W:${weekly.below.name}`, type: 'support' });
+        const MAX_LINES = 4;
+        const makeLevels = (data, prefix) => {
+            if (!data) return [];
+            return [
+                { name: "R5", price: data.r5, type: "resistance" },
+                { name: "R4", price: data.r4, type: "resistance" },
+                { name: "R3", price: data.r3, type: "resistance" },
+                { name: "R2", price: data.r2, type: "resistance" },
+                { name: "R1", price: data.r1, type: "resistance" },
+                { name: "PP", price: data.pp, type: "pivot" },
+                { name: "S1", price: data.s1, type: "support" },
+                { name: "S2", price: data.s2, type: "support" },
+                { name: "S3", price: data.s3, type: "support" },
+                { name: "S4", price: data.s4, type: "support" },
+                { name: "S5", price: data.s5, type: "support" }
+            ].filter(l => l.price && l.price > 0)
+                .map(l => ({ ...l, prefix }));
+        };
 
-        return lines;
+        const levels = [
+            ...makeLevels(currentKlinePivotData.daily, "D"),
+            ...makeLevels(currentKlinePivotData.weekly, "W")
+        ];
+        if (!levels.length) return [];
+
+        const within = levels.filter(l => l.price >= viewMin && l.price <= viewMax);
+        const ref = isFinite(refPrice) ? refPrice : (rangeMin + rangeMax) / 2;
+
+        const pickNearest = (arr, count) => arr
+            .slice()
+            .sort((a, b) => Math.abs(a.price - ref) - Math.abs(b.price - ref))
+            .slice(0, count);
+
+        let picked = [];
+        if (within.length) {
+            const withinWeekly = within.filter(l => l.prefix === "W");
+            const withinDaily = within.filter(l => l.prefix === "D");
+            if (withinWeekly.length) picked = picked.concat(pickNearest(withinWeekly, 1));
+            if (withinDaily.length) picked = picked.concat(pickNearest(withinDaily, 1));
+
+            if (picked.length < MAX_LINES) {
+                const rest = within.filter(l => !picked.includes(l));
+                picked = picked.concat(pickNearest(rest, MAX_LINES - picked.length));
+            }
+        } else {
+            const weekly = levels.filter(l => l.prefix === "W");
+            const daily = levels.filter(l => l.prefix === "D");
+            if (weekly.length) picked = picked.concat(pickNearest(weekly, 1));
+            if (daily.length) picked = picked.concat(pickNearest(daily, 1));
+            if (picked.length < 2) {
+                picked = picked.concat(pickNearest(levels.filter(l => !picked.includes(l)), 2 - picked.length));
+            }
+        }
+
+        return picked
+            .slice(0, MAX_LINES)
+            .sort((a, b) => a.price - b.price)
+            .map(l => ({ price: l.price, label: `${l.prefix}:${l.name}`, type: l.type }));
     }
 
     function buildKlineRange(centerTime, interval) {
@@ -3591,6 +3837,8 @@
             currentKlineData = cached.data;
             currentKlineCenterTime = centerTime || null;
             klineHoverIndex = currentKlineData.length ? currentKlineData.length - 1 : null;
+            klineHoverActive = false;
+            klineHoverPrice = null;
             drawKlineChart();
             updateKlineMeta(klineHoverIndex !== null ? currentKlineData[klineHoverIndex] : null);
             return;
@@ -3605,6 +3853,8 @@
             currentKlineData = data;
             currentKlineCenterTime = centerTime || null;
             klineHoverIndex = data.length ? data.length - 1 : null;
+            klineHoverActive = false;
+            klineHoverPrice = null;
             klineCache.set(key, { data, ts: now });
             drawKlineChart();
             updateKlineMeta(klineHoverIndex !== null ? data[klineHoverIndex] : null);
@@ -3627,7 +3877,8 @@
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, rect.width, rect.height);
 
-        const data = currentKlineData || [];
+        const viewWindow = getKlineWindow();
+        const data = viewWindow.data || [];
         if (data.length < 2) {
             ctx.fillStyle = '#707A8A';
             ctx.font = '12px "Exo 2", sans-serif';
@@ -3635,17 +3886,9 @@
             ctx.fillText(t("kline_no_data"), rect.width / 2, rect.height / 2);
             return;
         }
-
-        const values = data.map(d => d.close);
-        let minVal = Math.min(...values);
-        let maxVal = Math.max(...values);
-        const paddingRange = (maxVal - minVal) * 0.08 || 1;
-        minVal -= paddingRange;
-        maxVal += paddingRange;
-
-        const padding = { left: 44, right: 12, top: 12, bottom: 24 };
-        const width = rect.width - padding.left - padding.right;
-        const height = rect.height - padding.top - padding.bottom;
+        const scale = computeKlineScale(rect, data);
+        if (!scale) return;
+        const { minVal, maxVal, padding, width, height } = scale;
 
         // Grid
         ctx.strokeStyle = 'rgba(255,255,255,0.06)';
@@ -3658,27 +3901,54 @@
             ctx.stroke();
         }
 
-        // Line + area
-        const gradient = ctx.createLinearGradient(0, padding.top, 0, rect.height - padding.bottom);
-        gradient.addColorStop(0, 'rgba(240,185,11,0.35)');
-        gradient.addColorStop(1, 'rgba(240,185,11,0)');
+        if (klineChartMode === "candle") {
+            const colors = getKlineCandleColors();
+            const step = width / (data.length - 1);
+            const candleWidth = Math.max(1, Math.min(10, step * 0.6));
+            data.forEach((point, i) => {
+                const x = padding.left + (i / (data.length - 1)) * width;
+                const openY = padding.top + height - ((point.open - minVal) / (maxVal - minVal)) * height;
+                const closeY = padding.top + height - ((point.close - minVal) / (maxVal - minVal)) * height;
+                const highY = padding.top + height - ((point.high - minVal) / (maxVal - minVal)) * height;
+                const lowY = padding.top + height - ((point.low - minVal) / (maxVal - minVal)) * height;
+                const isUp = point.close >= point.open;
+                const color = isUp ? colors.up : colors.down;
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, highY);
+                ctx.lineTo(x, lowY);
+                ctx.stroke();
 
-        ctx.beginPath();
-        data.forEach((point, i) => {
-            const x = padding.left + (i / (data.length - 1)) * width;
-            const y = padding.top + height - ((point.close - minVal) / (maxVal - minVal)) * height;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        });
-        ctx.strokeStyle = '#F0B90B';
-        ctx.lineWidth = 1.6;
-        ctx.stroke();
+                const bodyTop = Math.min(openY, closeY);
+                const bodyBottom = Math.max(openY, closeY);
+                const bodyHeight = Math.max(1, bodyBottom - bodyTop);
+                ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+            });
+        } else {
+            // Line + area
+            const gradient = ctx.createLinearGradient(0, padding.top, 0, rect.height - padding.bottom);
+            gradient.addColorStop(0, 'rgba(240,185,11,0.35)');
+            gradient.addColorStop(1, 'rgba(240,185,11,0)');
 
-        ctx.lineTo(padding.left + width, padding.top + height);
-        ctx.lineTo(padding.left, padding.top + height);
-        ctx.closePath();
-        ctx.fillStyle = gradient;
-        ctx.fill();
+            ctx.beginPath();
+            data.forEach((point, i) => {
+                const x = padding.left + (i / (data.length - 1)) * width;
+                const y = padding.top + height - ((point.close - minVal) / (maxVal - minVal)) * height;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = '#F0B90B';
+            ctx.lineWidth = 1.6;
+            ctx.stroke();
+
+            ctx.lineTo(padding.left + width, padding.top + height);
+            ctx.lineTo(padding.left, padding.top + height);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
 
         // Axis labels
         ctx.fillStyle = '#707A8A';
@@ -3688,13 +3958,18 @@
         ctx.fillText(fmtPrice(minVal), 6, rect.height - padding.bottom);
 
         // Pivot lines (do not affect scale)
-        const pivotLines = getKlinePivotLines();
+        const pivotLines = getKlinePivotLines(minVal, maxVal);
         pivotLines.forEach((line) => {
             const y = padding.top + height - ((line.price - minVal) / (maxVal - minVal)) * height;
             if (y < padding.top - 4 || y > padding.top + height + 4) return;
 
             ctx.setLineDash(line.label.startsWith('W:') ? [6, 4] : [3, 3]);
-            ctx.strokeStyle = line.type === 'support' ? 'rgba(14,203,129,0.45)' : 'rgba(246,70,93,0.45)';
+            const lineColor = line.type === 'support'
+                ? 'rgba(14,203,129,0.45)'
+                : line.type === 'pivot'
+                    ? 'rgba(148,163,184,0.55)'
+                    : 'rgba(246,70,93,0.45)';
+            ctx.strokeStyle = lineColor;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(padding.left, y);
@@ -3703,24 +3978,60 @@
             ctx.setLineDash([]);
 
             const label = `${line.label} ${fmtPrice(line.price)}`;
-            ctx.fillStyle = line.type === 'support' ? 'rgba(14,203,129,0.9)' : 'rgba(246,70,93,0.9)';
+            const textColor = line.type === 'support'
+                ? 'rgba(14,203,129,0.9)'
+                : line.type === 'pivot'
+                    ? 'rgba(148,163,184,0.95)'
+                    : 'rgba(246,70,93,0.9)';
+            ctx.fillStyle = textColor;
             ctx.font = '10px "Exo 2", sans-serif';
             ctx.textAlign = 'right';
             ctx.fillText(label, rect.width - padding.right, Math.max(padding.top + 10, Math.min(y - 4, rect.height - padding.bottom - 4)));
         });
 
+        if (klineHoverActive && isFinite(klineHoverPrice)) {
+            const y = padding.top + height - ((klineHoverPrice - minVal) / (maxVal - minVal)) * height;
+            if (y >= padding.top && y <= padding.top + height) {
+                ctx.strokeStyle = 'rgba(226,232,240,0.35)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(rect.width - padding.right, y);
+                ctx.stroke();
+
+                const priceText = fmtPrice(klineHoverPrice);
+                ctx.font = '10px "Exo 2", sans-serif';
+                const textWidth = ctx.measureText(priceText).width;
+                const boxPad = 4;
+                const boxHeight = 14;
+                const boxWidth = textWidth + boxPad * 2;
+                const boxX = padding.left + 2;
+                const boxY = Math.max(padding.top, Math.min(y - boxHeight / 2, rect.height - padding.bottom - boxHeight));
+                ctx.fillStyle = 'rgba(15,23,42,0.85)';
+                ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+                ctx.fillStyle = '#E2E8F0';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(priceText, boxX + boxPad, boxY + boxHeight / 2);
+            }
+        }
+
         // Time labels
         const labelIndexes = [0, Math.floor(data.length / 2), data.length - 1];
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
         labelIndexes.forEach(i => {
             const x = padding.left + (i / (data.length - 1)) * width;
             ctx.fillText(fmtKlineTime(data[i].openTime), x, rect.height - 6);
         });
 
         // Crosshair
-        if (klineHoverIndex !== null && data[klineHoverIndex]) {
-            const point = data[klineHoverIndex];
-            const x = padding.left + (klineHoverIndex / (data.length - 1)) * width;
+        if (klineHoverIndex !== null && klineHoverIndex >= viewWindow.start && klineHoverIndex <= viewWindow.end) {
+            const localIndex = klineHoverIndex - viewWindow.start;
+            const point = data[localIndex];
+            const x = padding.left + (localIndex / (data.length - 1)) * width;
             const y = padding.top + height - ((point.close - minVal) / (maxVal - minVal)) * height;
             ctx.strokeStyle = 'rgba(240,185,11,0.4)';
             ctx.beginPath();
@@ -3740,16 +4051,52 @@
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        const index = Math.round((x / rect.width) * (currentKlineData.length - 1));
-        const point = currentKlineData[index];
+        const viewWindow = getKlineWindow();
+        const scale = computeKlineScale(rect, viewWindow.data);
+        if (!scale) return;
+        const { padding, width } = scale;
+        const clampedX = Math.max(padding.left, Math.min(rect.width - padding.right, x));
+        const index = Math.round(((clampedX - padding.left) / width) * (viewWindow.data.length - 1));
+        const point = viewWindow.data[index];
         if (!point) return;
-        klineHoverIndex = index;
+        klineHoverIndex = viewWindow.start + index;
         updateKlineMeta(point);
         drawKlineChart();
 
         if (y >= rect.height - 24) {
             loadKlineData(currentKlineSymbol, currentKlineInterval, point.openTime);
         }
+    }
+
+    function updateKlineHoverAt(clientX, clientY) {
+        const canvas = $("klineCanvas");
+        if (!canvas || !currentKlineData.length) return;
+        const rect = canvas.getBoundingClientRect();
+        if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
+            klineHoverActive = false;
+            drawKlineChart();
+            return;
+        }
+        const viewWindow = getKlineWindow();
+        const scale = computeKlineScale(rect, viewWindow.data);
+        if (!scale) return;
+        const { minVal, maxVal, padding, width, height } = scale;
+        let x = clientX - rect.left;
+        let y = clientY - rect.top;
+        x = Math.max(padding.left, Math.min(rect.width - padding.right, x));
+        y = Math.max(padding.top, Math.min(rect.height - padding.bottom, y));
+
+        const index = Math.round(((x - padding.left) / width) * (viewWindow.data.length - 1));
+        const point = viewWindow.data[index];
+        if (point) {
+            klineHoverIndex = viewWindow.start + index;
+            updateKlineMeta(point);
+        }
+
+        const price = maxVal - ((y - padding.top) / height) * (maxVal - minVal);
+        klineHoverPrice = isFinite(price) ? price : null;
+        klineHoverActive = true;
+        drawKlineChart();
     }
 
     function renderKlineIntervals() {
@@ -3770,24 +4117,30 @@
         updateKlineIntervalLabel();
     }
 
-    function showKlineModal(symbol, interval) {
+    function showKlineModal(symbol, interval, forceShow = false) {
         currentKlineSymbol = symbol;
         if (interval) currentKlineInterval = interval;
         const modal = $("klineModal");
         if (!modal) return;
 
         if (!binanceChecked) {
+            if (forceShow) {
+                $("klineSymbol").textContent = symbol;
+                modal.style.display = 'flex';
+                updateKlineIntervalLabel();
+                setKlineLoading(true, t("kline_loading"));
+            }
             checkBinanceAvailability().then(() => {
-                if (!binanceAvailable) {
+                if (!binanceAvailable && !forceShow) {
                     showToast(t("kline_unavailable"));
                     return;
                 }
-                showKlineModal(symbol, interval);
+                showKlineModal(symbol, interval, forceShow);
             });
             return;
         }
 
-        if (!binanceAvailable) {
+        if (!binanceAvailable && !forceShow) {
             showToast(t("kline_unavailable"));
             return;
         }
@@ -3795,6 +4148,15 @@
         $("klineSymbol").textContent = symbol;
         modal.style.display = 'flex';
         updateKlineIntervalLabel();
+        if (!binanceAvailable && forceShow) {
+            currentKlineData = [];
+            klineHoverIndex = null;
+            currentKlinePivotData = null;
+            drawKlineChart();
+            showKlineError(t("kline_unavailable"));
+            return;
+        }
+
         loadKlineData(symbol, currentKlineInterval, null);
 
         currentKlinePivotData = null;
@@ -3806,7 +4168,12 @@
         });
     }
 
-    function hideKlineModal() {
+    function hideKlineModal(force = false) {
+        if (positionKlineLinked && !force) {
+            if (!confirmClosePositionModal()) return;
+            hidePositionModal(true);
+            return;
+        }
         const modal = $("klineModal");
         if (modal) modal.style.display = 'none';
         currentKlineSymbol = null;
@@ -3823,7 +4190,67 @@
         const canvas = $("klineCanvas");
         if (canvas) {
             canvas.addEventListener('click', handleKlineCanvasClick);
+            canvas.addEventListener('mousemove', (e) => updateKlineHoverAt(e.clientX, e.clientY));
+            canvas.addEventListener('mouseleave', () => {
+                klineHoverActive = false;
+                drawKlineChart();
+            });
+            canvas.addEventListener('wheel', (e) => {
+                if (!currentKlineData.length) return;
+                e.preventDefault();
+                const factor = e.deltaY < 0 ? 1.1 : 0.9;
+                if (e.altKey || e.ctrlKey) {
+                    applyKlineZoom(factor);
+                } else {
+                    applyKlineZoomX(factor);
+                }
+            }, { passive: false });
+            canvas.addEventListener('touchstart', (e) => {
+                if (!e.touches || e.touches.length < 2) return;
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                klinePinchDist = Math.hypot(dx, dy);
+            }, { passive: true });
+            canvas.addEventListener('touchmove', (e) => {
+                if (!e.touches) return;
+                if (e.touches.length >= 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const dist = Math.hypot(dx, dy);
+                    if (klinePinchDist) {
+                        const factor = dist / klinePinchDist;
+                        applyKlineZoomX(factor);
+                    }
+                    klinePinchDist = dist;
+                    e.preventDefault();
+                    return;
+                }
+                if (!e.touches[0]) return;
+                updateKlineHoverAt(e.touches[0].clientX, e.touches[0].clientY);
+                e.preventDefault();
+            }, { passive: false });
+            canvas.addEventListener('touchend', () => {
+                klinePinchDist = null;
+                klineHoverActive = false;
+                drawKlineChart();
+            });
         }
+
+        const switchButtons = document.querySelectorAll("#klineKlineSwitch button");
+        switchButtons.forEach(btn => {
+            btn.onclick = () => {
+                if (!positionKlineLinked) return;
+                setPositionKlineView(btn.dataset.view);
+            };
+        });
+
+        const modeButtons = document.querySelectorAll("#klineModeSwitch button");
+        modeButtons.forEach(btn => {
+            btn.onclick = () => {
+                setKlineChartMode(btn.dataset.mode);
+            };
+        });
+        updateKlineModeSwitch();
 
         renderKlineIntervals();
         updateKlineIntervalLabel();

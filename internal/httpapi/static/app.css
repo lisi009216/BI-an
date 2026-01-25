@@ -983,6 +983,15 @@ button:disabled {
     color: var(--text)
 }
 
+.kline-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end
+}
+
 .kline-intervals {
     display: flex;
     gap: 6px;
@@ -1004,6 +1013,32 @@ button:disabled {
     background: var(--yellow);
     color: #202630;
     border-color: transparent
+}
+
+.kline-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--vessel);
+    border: 1px solid var(--line)
+}
+
+.kline-mode-switch button {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer
+}
+
+.kline-mode-switch button.active {
+    background: var(--yellow);
+    color: #202630;
+    font-weight: 600
 }
 
 .kline-chart {
@@ -1071,6 +1106,105 @@ button:disabled {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px
+    }
+}
+
+/* Position + Kline quick switch (mobile) */
+.position-kline-switch {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--vessel);
+    border: 1px solid var(--line);
+    margin-left: auto;
+    margin-right: 6px;
+    flex: 0 0 auto
+}
+
+body.position-kline-mobile .position-kline-switch {
+    display: inline-flex
+}
+
+.position-kline-switch button {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    line-height: 1;
+    white-space: nowrap
+}
+
+.position-kline-switch button.active {
+    background: var(--yellow);
+    color: #202630;
+    font-weight: 600
+}
+
+@media (max-width:520px) {
+
+    body.position-kline-mobile #positionModal .modal-header,
+    body.position-kline-mobile #klineModal .modal-header {
+        flex-wrap: wrap
+    }
+
+    body.position-kline-mobile .position-kline-switch {
+        width: 30%;
+        justify-content: center;
+        margin-left: 0
+    }
+}
+
+@media (min-width:521px) {
+    body.position-kline-mobile .position-kline-switch {
+        background: var(--card)
+    }
+}
+
+/* Position + Kline split layout for wide screens */
+@media (min-width:1201px) {
+
+    body.position-kline-split #positionModal,
+    body.position-kline-split #klineModal {
+        background: rgba(2, 6, 23, 0.7)
+    }
+
+    body.position-kline-split #positionModal {
+        left: 0;
+        right: 50%;
+        padding: 20px 12px;
+        justify-content: flex-end
+    }
+
+    body.position-kline-split #klineModal {
+        left: 50%;
+        right: 0;
+        padding: 20px 12px;
+        justify-content: flex-start
+    }
+
+    body.position-kline-split #positionModal .position-modal-content {
+        width: 100%;
+        max-width: 520px;
+        max-height: calc(100vh - 64px)
+    }
+
+    body.position-kline-split #klineModal .kline-modal-content {
+        width: 100%;
+        max-width: 900px;
+        max-height: calc(100vh - 64px)
+    }
+
+    body.position-kline-split .kline-chart {
+        height: clamp(240px, 38vh, 420px)
+    }
+
+    body.position-kline-split #klineModal .close-btn {
+        display: none
     }
 }
 
